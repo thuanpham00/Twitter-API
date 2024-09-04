@@ -1,1 +1,0 @@
-1. dùng express-validator: validate input phía server
