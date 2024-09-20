@@ -26,6 +26,7 @@ class DatabaseService {
   }
 
   // get: giúp truy cập thuộc tính và xử lý logic và khi truy cập giá trị thì không cần gọi hàm
+  // phương thức
   get users(): Collection<User> {
     return this.db.collection(process.env.DB_USERS_COLLECTION as string)
   }

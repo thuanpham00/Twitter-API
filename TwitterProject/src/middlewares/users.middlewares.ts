@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from "express"
 import { checkSchema } from "express-validator"
+import { ErrorWithStatus } from "~/models/Errors"
+import userService from "~/services/user.services"
 import { validate } from "~/utils/validations"
 
 export const loginValidator = (req: Request, res: Response, next: NextFunction) => {
@@ -9,7 +11,7 @@ export const loginValidator = (req: Request, res: Response, next: NextFunction) 
       error: "Missing email or password"
     })
   }
-  next() // không lỗi thì chạy tiếp đến middleware
+  next() // không lỗi thì chạy tiếp đến controller
 }
 
 // dùng `express-validator`
@@ -30,7 +32,17 @@ export const registerValidator = validate(
     email: {
       isEmail: true,
       notEmpty: true, // không rỗng
-      trim: true
+      trim: true,
+      custom: {
+        options: async (value) => {
+          const isExistEmail = await userService.checkEmailExits(value)
+          if (isExistEmail) {
+            throw new Error("Email already exists")
+            // throw new ErrorWithStatus({ message: "Email already exists", status: 401 })
+          }
+          return true
+        }
+      }
     },
     password: {
       notEmpty: true,

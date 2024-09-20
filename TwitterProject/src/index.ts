@@ -1,6 +1,7 @@
-import express, { Router } from "express"
+import express from "express"
 import userRouter from "./routes/users.routes"
 import databaseService from "./services/database.services"
+import { defaultErrorHandler } from "./middlewares/error.middlewares"
 
 const app = express()
 const port = 4000
@@ -9,6 +10,9 @@ app.use(express.json()) // chuyển json sang thành obj
 app.use("/users", userRouter)
 
 databaseService.connect()
+
+// khi app lỗi nó sẽ nhảy vào middleware này
+app.use(defaultErrorHandler)
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
