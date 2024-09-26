@@ -1,19 +1,10 @@
 import { NextFunction, Request, Response } from "express"
 import userService from "~/services/user.services"
 import { ParamsDictionary } from "express-serve-static-core"
-import { RegisterReqBody } from "~/models/requests/User.requests"
-
-export const loginController = (req: Request, res: Response) => {
-  const { email, password } = req.body
-  if (email === "phamthuan99@gmail.com" && password === "thuan123") {
-    return res.json({
-      message: "login success"
-    })
-  }
-  return res.status(400).json({
-    error: "login failed"
-  })
-}
+import { LogoutBody, RegisterReqBody } from "~/models/requests/User.requests"
+import { ObjectId } from "mongodb"
+import User from "~/models/schemas/User.schema"
+import { userMessages } from "~/constants/message"
 
 export const registerController = async (
   req: Request<ParamsDictionary, any, RegisterReqBody>,
@@ -23,7 +14,26 @@ export const registerController = async (
   // throw new Error("Lỗi rồi")
   const result = await userService.register(req.body)
   return res.json({
-    message: "register success",
+    message: userMessages.REGISTER_SUCCESS,
     result
+  })
+}
+
+export const loginController = async (req: Request, res: Response) => {
+  const { user } = req
+  const user_id = (user as User)._id as ObjectId
+  // throw new Error("Not implemented")
+  const result = await userService.login(user_id.toString())
+  return res.json({
+    message: userMessages.LOGIN_SUCCESS,
+    result
+  })
+}
+
+export const logoutController = async (req: Request<ParamsDictionary, any, LogoutBody>, res: Response) => {
+  const { refresh_token } = req.body
+  const result = await userService.logout(refresh_token)
+  return res.json({
+    message: result.message
   })
 }
