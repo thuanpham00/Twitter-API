@@ -99,6 +99,9 @@ class UserService {
   }
 
   async verifyEmail(user_id: string) {
+    // tạo giá trị cập nhật
+    // mongoDB cập nhật giá trị
+
     // await databaseService.users.updateOne(
     //   {
     //     _id: new ObjectId(user_id) // dò tìm theo id và set giá trị nhanh hơn
@@ -120,8 +123,11 @@ class UserService {
         {
           $set: {
             email_verify_token: "",
-            verify: UserVerifyStatus.Verified,
-            updated_at: new Date()
+            verify: UserVerifyStatus.Verified
+            // updated_at: new Date() // tạo giá trị cập nhập
+          },
+          $currentDate: {
+            updated_at: true // MongoDB tự cập nhật giá trị (Date)
           }
         }
       )
@@ -130,6 +136,30 @@ class UserService {
     return {
       access_token,
       refresh_token
+    }
+  }
+
+  // reset lại email-verify-token
+  async resendVerifyEmail(user_id: string) {
+    const email_verify_token = await this.signEmailVerify(user_id)
+    console.log("Gửi email: ", email_verify_token)
+
+    await databaseService.users.updateOne(
+      {
+        _id: new ObjectId(user_id)
+      },
+      {
+        $set: {
+          email_verify_token
+        },
+        $currentDate: {
+          updated_at: true
+        }
+      }
+    )
+
+    return {
+      message: userMessages.RESEND_EMAIL_VERIFY_SUCCESS
     }
   }
 }

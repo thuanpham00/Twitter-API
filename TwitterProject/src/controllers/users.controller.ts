@@ -7,6 +7,7 @@ import User from "~/models/schemas/User.schema"
 import { userMessages } from "~/constants/message"
 import databaseService from "~/services/database.services"
 import httpStatus from "~/constants/httpStatus"
+import { UserVerifyStatus } from "~/constants/enum"
 
 export const registerController = async (
   req: Request<ParamsDictionary, any, RegisterReqBody>,
@@ -41,7 +42,7 @@ export const logoutController = async (req: Request<ParamsDictionary, any, Logou
   })
 }
 
-export const emailVerifyValidator = async (req: Request, res: Response) => {
+export const emailVerifyController = async (req: Request, res: Response) => {
   const { user_id } = req.decode_email_verify_token as TokenPayload
   const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) })
   // nếu không tìm thấy user thì báo lỗi
@@ -61,3 +62,22 @@ export const emailVerifyValidator = async (req: Request, res: Response) => {
 
 // lúc register thì có dùng user_id sign ra chuỗi email_verify_token và lưu vào chung db.
 // để chạy route này thì truyền "email_verify_token" lên body và decode (verify ngược lại) và lấy ra user_id trong nó -> qua controller -> truyền user_id vào phương thức và nó update (dò theo user_id và set giá trị của email_verify_token = "") -> verify thành công
+
+export const resendVerifyEmailController = async (req: Request, res: Response) => {
+  const { user_id } = req.decode_authorization as TokenPayload
+  const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) })
+  if (!user) {
+    return res.status(httpStatus.NOTFOUND).json({
+      message: userMessages.USER_NOT_FOUND
+    })
+  }
+  if (user.verify === UserVerifyStatus.Verified) {
+    return res.status(httpStatus.OK).json({
+      message: userMessages.EMAIL_VERIFY_ALREADY_BEFORE
+    })
+  }
+  const result = await userService.resendVerifyEmail(user_id.toString())
+  return res.json({
+    message: result.message
+  })
+}

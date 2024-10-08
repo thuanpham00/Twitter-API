@@ -1,5 +1,11 @@
 import { Router } from "express"
-import { emailVerifyValidator, loginController, logoutController, registerController } from "~/controllers/users.controller"
+import {
+  emailVerifyController,
+  loginController,
+  logoutController,
+  registerController,
+  resendVerifyEmailController
+} from "~/controllers/users.controller"
 import {
   accessTokenValidator,
   emailVerifyTokenValidator,
@@ -34,12 +40,7 @@ userRouter.post("/login", loginValidator, wrapRequestHandler(loginController))
  * Header: {Authorization: Bearer <access_token>}
  * Body: { refresh_token: string }
  */
-userRouter.post(
-  "/logout",
-  accessTokenValidator,
-  refreshTokenValidator,
-  wrapRequestHandler(logoutController)
-)
+userRouter.post("/logout", accessTokenValidator, refreshTokenValidator, wrapRequestHandler(logoutController))
 
 /**
  * Description: verify email when user click on the link in email
@@ -47,11 +48,16 @@ userRouter.post(
  * Method: POST
  * Body: { email_verify_token: string }
  */
-userRouter.post(
-  "/verify-email",
-  emailVerifyTokenValidator,
-  wrapRequestHandler(emailVerifyValidator))
+userRouter.post("/verify-email", emailVerifyTokenValidator, wrapRequestHandler(emailVerifyController))
 
+/**
+ * Description: verify email when user click on the link in email
+ * Path: /resend-verify-email
+ * Method: POST
+ * Header: {Authorization: Bearer <access_token>}
+ * Body: {}
+ */
+userRouter.post("/resend-verify-email", accessTokenValidator, wrapRequestHandler(resendVerifyEmailController))
 export default userRouter
 
 // validate: check lỗi middleware, nếu có lỗi ko chạy đến controller
