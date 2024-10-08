@@ -6,6 +6,7 @@ declare module "express" {
     user?: User
     decode_authorization?: TokenPayload
     decode_refresh_token?: TokenPayload
+    decode_email_verify_token?: TokenPayload
   }
 }
 // mở rộng kiểu dữ liệu Request
