@@ -9,7 +9,10 @@ export interface RegisterReqBody {
   confirm_password: string
   date_of_birth: string
 }
-
+export interface LogicReqBody {
+  email: string
+  password: string
+}
 export interface TokenPayload extends JwtPayload {
   user_id: string
   token_type: TokenType
@@ -17,4 +20,8 @@ export interface TokenPayload extends JwtPayload {
 
 export interface LogoutBody {
   refresh_token: string
+}
+
+export interface VerifyEmailBody {
+  email_verify_token: string
 }

@@ -1,7 +1,13 @@
 import { NextFunction, Request, Response } from "express"
 import userService from "~/services/user.services"
 import { ParamsDictionary } from "express-serve-static-core"
-import { LogoutBody, RegisterReqBody, TokenPayload } from "~/models/requests/User.requests"
+import {
+  LogicReqBody,
+  LogoutBody,
+  RegisterReqBody,
+  TokenPayload,
+  VerifyEmailBody
+} from "~/models/requests/User.requests"
 import { ObjectId } from "mongodb"
 import User from "~/models/schemas/User.schema"
 import { userMessages } from "~/constants/message"
@@ -23,7 +29,7 @@ export const registerController = async (
 }
 // register: nó kiểm tra các input đầu vào (middlewares), xong insert vào db collection (controller)
 // login: nó dò tìm tài khoản (email, pass) (middlewares), sau đó lấy ra user_id (tìm thấy) vào (controller) login
-export const loginController = async (req: Request, res: Response) => {
+export const loginController = async (req: Request<ParamsDictionary, any, LogicReqBody>, res: Response) => {
   const { user } = req
   const user_id = (user as User)._id as ObjectId
   // throw new Error("Not implemented")
@@ -42,7 +48,7 @@ export const logoutController = async (req: Request<ParamsDictionary, any, Logou
   })
 }
 
-export const emailVerifyController = async (req: Request, res: Response) => {
+export const verifyEmailController = async (req: Request<ParamsDictionary, any, VerifyEmailBody>, res: Response) => {
   const { user_id } = req.decode_email_verify_token as TokenPayload
   const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) })
   // nếu không tìm thấy user thì báo lỗi

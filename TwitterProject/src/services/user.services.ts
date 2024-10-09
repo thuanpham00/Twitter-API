@@ -72,7 +72,7 @@ class UserService {
     await databaseService.refreshTokens.insertOne(
       new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token })
     )
-    console.log("email-verify-token: ", emailVerifyToken)
+    // console.log("email-verify-token: ", emailVerifyToken)
     return { access_token, refresh_token }
   }
 
@@ -82,6 +82,7 @@ class UserService {
     return Boolean(user)
   }
 
+  // chỉ có register, login, verify-email mới sign và trả về AT và RT
   async login(user_id: string) {
     const [access_token, refresh_token] = await this.signAccessAndRefreshToken(user_id)
 
