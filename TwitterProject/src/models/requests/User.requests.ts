@@ -25,3 +25,16 @@ export interface LogoutBody {
 export interface VerifyEmailBody {
   email_verify_token: string
 }
+
+export interface ForgotPasswordBody {
+  email: string
+}
+
+export interface VerifyForgotPasswordBody {
+  forgot_password_token: string
+}
+
+export interface ResetPasswordBody extends VerifyForgotPasswordBody {
+  password: string
+  confirm_password: string
+}

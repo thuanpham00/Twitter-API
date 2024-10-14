@@ -10,6 +10,7 @@ import { config } from "dotenv"
 import { userMessages } from "~/constants/message"
 config()
 class UserService {
+  // các phương thức (method)
   private signAccessToken(user_id: string) {
     return signToken({
       payload: {
@@ -45,6 +46,19 @@ class UserService {
       privateKey: process.env.JWT_VERIFY_EMAIL_SECRET as string,
       options: {
         expiresIn: process.env.EMAIL_VERIFY_EXPIRES_IN
+      }
+    })
+  }
+
+  private signForgotPassword(user_id: string) {
+    return signToken({
+      payload: {
+        user_id,
+        token_type: TokenType.ForgotPasswordToken
+      },
+      privateKey: process.env.JWT_FORGOT_PASSWORD_SECRET as string,
+      options: {
+        expiresIn: process.env.FORGOT_PASSWORD_EXPIRES_IN
       }
     })
   }
@@ -162,6 +176,64 @@ class UserService {
     return {
       message: userMessages.RESEND_EMAIL_VERIFY_SUCCESS
     }
+  }
+
+  async forgotPassword(user_id: string) {
+    const forgot_password_token = await this.signForgotPassword(user_id)
+    // tạo token forgot password
+    await databaseService.users.updateOne(
+      {
+        _id: new ObjectId(user_id)
+      },
+      {
+        $set: {
+          forgot_password_token
+        },
+        $currentDate: {
+          updated_at: true
+        }
+      }
+    )
+
+    // gửi email kèm đường link đến email người dùng: https://twitter/forgot-password?token=token
+    console.log("forgot-password: ", forgot_password_token)
+    return {
+      message: userMessages.CHECK_EMAIL_TO_RESET_PASSWORD
+    }
+  }
+
+  async resetPassword(user_id: string, password: string) {
+    await databaseService.users.updateOne(
+      {
+        _id: new ObjectId(user_id)
+      },
+      {
+        $set: {
+          forgot_password_token: "",
+          password: hashPassword(password)
+        },
+        $currentDate: {
+          updated_at: true
+        }
+      }
+    )
+    return {
+      message: userMessages.RESET_PASSWORD_IS_SUCCESS
+    }
+  }
+
+  async getMe(user_id: string) {
+    const user = await databaseService.users.findOne(
+      { _id: new ObjectId(user_id) },
+      {
+        projection: {
+          password: 0, // lọc thuộc tính trả về // ko trả về password
+          email_verify_token: 0,
+          forgot_password_token: 0
+        }
+      }
+    )
+    return user
   }
 }
 

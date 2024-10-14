@@ -2,11 +2,14 @@ import { NextFunction, Request, Response } from "express"
 import userService from "~/services/user.services"
 import { ParamsDictionary } from "express-serve-static-core"
 import {
+  ForgotPasswordBody,
   LogicReqBody,
   LogoutBody,
   RegisterReqBody,
+  ResetPasswordBody,
   TokenPayload,
-  VerifyEmailBody
+  VerifyEmailBody,
+  VerifyForgotPasswordBody
 } from "~/models/requests/User.requests"
 import { ObjectId } from "mongodb"
 import User from "~/models/schemas/User.schema"
@@ -87,3 +90,69 @@ export const resendVerifyEmailController = async (req: Request, res: Response) =
     message: result.message
   })
 }
+
+export const forgotPasswordController = async (
+  req: Request<ParamsDictionary, any, ForgotPasswordBody>,
+  res: Response
+) => {
+  const { user } = req
+  const user_id = (user as User)._id
+  const result = await userService.forgotPassword((user_id as ObjectId)?.toString())
+
+  return res.json({
+    message: result.message
+  })
+}
+// đầu tiên gửi email từ body lên và dò tìm nếu tìm thấy trả về user
+// từ user lấy ra user_id truyền vào method
+// cập nhật db và thêm forgot_password_token vào
+
+export const verifyForgotPasswordController = async (
+  req: Request<ParamsDictionary, any, VerifyForgotPasswordBody>,
+  res: Response
+) => {
+  return res.json({
+    message: userMessages.VERIFY_FORGOT_PASSWORD_SUCCESS
+  })
+}
+
+export const resetPasswordController = async (
+  req: Request<ParamsDictionary, any, ResetPasswordBody>,
+  res: Response
+) => {
+  const { user_id } = req.decode_forgot_password_token as TokenPayload
+  const { password } = req.body
+  const result = await userService.resetPassword(user_id, password)
+  return res.json({
+    message: result.message
+  })
+}
+
+export const getMeController = async (req: Request, res: Response) => {
+  const { user_id } = req.decode_authorization as TokenPayload
+  const user = await userService.getMe(user_id)
+  return res.json({
+    message: userMessages.GET_PROFILE_IS_SUCCESS,
+    result: user
+  })
+}
+
+/**
+ * POST - /register: truyền body {email, password, confirm_password, date_of_birth, name} -> validate các input -> truyền body {} vào services tạo AT và RT trả về; lưu RT vào db
+
+ * POST - /login: truyền body {email, password} -> validate các input -> dò tìm user lấy ra user_id -> truyền user_id vào services tạo AT và RT trả về; lưu RT vào db
+
+ * POST - /logout: truyền body {refresh_token} -> validate các input -> xóa refresh_token khỏi db
+
+ * POST - /verify-email: truyền body {email_verify_token}: đã tạo lúc register -> verify ra lấy user_id -> truyền user_id vào services -> update email_verify_token = "" -> tạo AT và RT trả về db
+
+ * POST - /resend-verify-email: truyền body {rỗng} -> sử dụng AT -> verify ra lấy user_id -> truyền user_id vào services tạo lại email_verify_token
+
+ * POST - /forgot-password: truyền body {email} -> dò tìm email -> và lấy ra user_id -> truyền user_id vào services -> update forgot_password_token (tạo ra)
+
+ * POST - /verify-forgot-password: truyền body {forgot_password_token} -> verify xong lấy ra user_id -> truyền user_id để dò tìm user -> thành công
+
+ * POST - /reset-password: truyền body {forgot_password_token, password, confirm_password} -> validate các input -> verify forgot_password_token -> lấy ra user_id -> truyền user_id và password vào services -> dò tìm và update password mới và forgot_password_token: ""
+
+ * GET - /me -> verify AT -> lấy user_id -> truyền user_id vào services
+*/

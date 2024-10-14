@@ -16,6 +16,7 @@ class DatabaseService {
 
   // kết nối database
   // Ví dụ: databaseService.connect()
+  // phương thức
   async connect() {
     try {
       await this.db.command({ ping: 1 })
@@ -27,7 +28,7 @@ class DatabaseService {
   }
 
   // get: giúp truy cập thuộc tính và xử lý logic và khi truy cập giá trị thì không cần gọi hàm
-  // phương thức
+  // thuộc tính được định nghĩa dưới dạng getter
   get users(): Collection<User> {
     return this.db.collection(process.env.DB_USERS_COLLECTION as string)
   }

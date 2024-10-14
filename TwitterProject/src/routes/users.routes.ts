@@ -1,17 +1,24 @@
 import { Router } from "express"
 import {
+  forgotPasswordController,
+  getMeController,
   loginController,
   logoutController,
   registerController,
   resendVerifyEmailController,
-  verifyEmailController
+  resetPasswordController,
+  verifyEmailController,
+  verifyForgotPasswordController
 } from "~/controllers/users.controller"
 import {
   accessTokenValidator,
   emailVerifyTokenValidator,
+  forgotPasswordValidator,
   loginValidator,
   refreshTokenValidator,
-  registerValidator
+  registerValidator,
+  resetPasswordValidator,
+  verifyForgotPasswordTokenValidator
 } from "~/middlewares/users.middlewares"
 import { wrapRequestHandler } from "~/utils/handlers"
 
@@ -58,6 +65,44 @@ userRouter.post("/verify-email", emailVerifyTokenValidator, wrapRequestHandler(v
  * Body: {}
  */
 userRouter.post("/resend-verify-email", accessTokenValidator, wrapRequestHandler(resendVerifyEmailController))
+
+/**
+ * Description: submit email to reset password
+ * Path: /forgot-password
+ * Method: POST
+ * Body: {email: string}
+ */
+userRouter.post("/forgot-password", forgotPasswordValidator, wrapRequestHandler(forgotPasswordController))
+
+/**
+ * Description: verify link in email when user click on the link in email
+ * Path: /verify-forgot-password
+ * Method: POST
+ * Body: {forgot_password_token: string}
+ */
+userRouter.post(
+  "/verify-forgot-password",
+  verifyForgotPasswordTokenValidator,
+  wrapRequestHandler(verifyForgotPasswordController)
+)
+
+/**
+ * Description: reset password
+ * Path: /reset-password
+ * Method: POST
+ * Body: {forgot_password_token: string, password: string, confirm_password: string}
+ */
+userRouter.post("/reset-password", resetPasswordValidator, wrapRequestHandler(resetPasswordController))
+
+/**
+ * Description: get my profile
+ * Path: /me
+ * Method: POST
+ * Header: {Authorization: Bearer <access_token>}
+ * Body: {}
+ */
+userRouter.get("/me", accessTokenValidator, wrapRequestHandler(getMeController))
+
 export default userRouter
 
 // validate: check lỗi middleware, nếu có lỗi ko chạy đến controller
