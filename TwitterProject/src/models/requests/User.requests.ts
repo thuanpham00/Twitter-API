@@ -1,5 +1,5 @@
 import { JwtPayload } from "jsonwebtoken"
-import { TokenType } from "~/constants/enum"
+import { TokenType, UserVerifyStatus } from "~/constants/enum"
 
 // định nghĩa interface request body gửi lên
 export interface RegisterReqBody {
@@ -9,6 +9,17 @@ export interface RegisterReqBody {
   confirm_password: string
   date_of_birth: string
 }
+
+export interface UpdateMeReqBody {
+  name?: string
+  date_of_birth?: string
+  bio?: string
+  location?: string
+  website?: string
+  username?: string
+  avatar?: string
+  cover_photo?: string
+}
 export interface LogicReqBody {
   email: string
   password: string
@@ -16,6 +27,7 @@ export interface LogicReqBody {
 export interface TokenPayload extends JwtPayload {
   user_id: string
   token_type: TokenType
+  verify: UserVerifyStatus
 }
 
 export interface LogoutBody {

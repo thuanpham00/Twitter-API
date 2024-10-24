@@ -7,9 +7,11 @@ import {
   registerController,
   resendVerifyEmailController,
   resetPasswordController,
+  updateMeController,
   verifyEmailController,
   verifyForgotPasswordController
 } from "~/controllers/users.controller"
+import { filterMiddleware } from "~/middlewares/common.middlewares"
 import {
   accessTokenValidator,
   emailVerifyTokenValidator,
@@ -18,8 +20,11 @@ import {
   refreshTokenValidator,
   registerValidator,
   resetPasswordValidator,
+  updateMeValidator,
+  verifiedUserValidator,
   verifyForgotPasswordTokenValidator
 } from "~/middlewares/users.middlewares"
+import { UpdateMeReqBody } from "~/models/requests/User.requests"
 import { wrapRequestHandler } from "~/utils/handlers"
 
 const userRouter = Router()
@@ -97,11 +102,27 @@ userRouter.post("/reset-password", resetPasswordValidator, wrapRequestHandler(re
 /**
  * Description: get my profile
  * Path: /me
- * Method: POST
+ * Method: GET
  * Header: {Authorization: Bearer <access_token>}
  * Body: {}
  */
 userRouter.get("/me", accessTokenValidator, wrapRequestHandler(getMeController))
+
+/**
+ * Description: update my profile
+ * Path: /me
+ * Method: PATCH
+ * Header: {Authorization: Bearer <access_token>}
+ * Body: UserSchema
+ */
+userRouter.patch(
+  "/me",
+  accessTokenValidator,
+  verifiedUserValidator,
+  updateMeValidator,
+  filterMiddleware<UpdateMeReqBody>(["name", "date_of_birth", "bio", "location", "website", "username", "avatar", "cover_photo"]),
+  wrapRequestHandler(updateMeController)
+)
 
 export default userRouter
 
@@ -146,3 +167,5 @@ export default userRouter
   Khi xảy ra lỗi trong synchronous handler thì tự động sẽ được chuyển sang error handler
   Khi xảy ra lỗi trong asynchronous handler thì phải gọi `next(err)` để chuyển sang error handler
  */
+
+// route nào cần AccessToken thì mới cần truyền vào headers để xác thực người dùng ,còn route nào ko cần AccessToken thì ko cần truyền

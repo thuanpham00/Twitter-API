@@ -8,6 +8,7 @@ import {
   RegisterReqBody,
   ResetPasswordBody,
   TokenPayload,
+  UpdateMeReqBody,
   VerifyEmailBody,
   VerifyForgotPasswordBody
 } from "~/models/requests/User.requests"
@@ -17,6 +18,7 @@ import { userMessages } from "~/constants/message"
 import databaseService from "~/services/database.services"
 import httpStatus from "~/constants/httpStatus"
 import { UserVerifyStatus } from "~/constants/enum"
+import { pick } from "lodash"
 
 export const registerController = async (
   req: Request<ParamsDictionary, any, RegisterReqBody>,
@@ -36,7 +38,7 @@ export const loginController = async (req: Request<ParamsDictionary, any, LogicR
   const { user } = req
   const user_id = (user as User)._id as ObjectId
   // throw new Error("Not implemented")
-  const result = await userService.login(user_id.toString())
+  const result = await userService.login({ user_id: user_id.toString(), verify: (user as User).verify })
   return res.json({
     message: userMessages.LOGIN_SUCCESS,
     result
@@ -97,7 +99,10 @@ export const forgotPasswordController = async (
 ) => {
   const { user } = req
   const user_id = (user as User)._id
-  const result = await userService.forgotPassword((user_id as ObjectId)?.toString())
+  const result = await userService.forgotPassword({
+    user_id: (user_id as ObjectId)?.toString(),
+    verify: (user as User).verify
+  })
 
   return res.json({
     message: result.message
@@ -137,6 +142,17 @@ export const getMeController = async (req: Request, res: Response) => {
   })
 }
 
+export const updateMeController = async (req: Request<ParamsDictionary, any, UpdateMeReqBody>, res: Response) => {
+  const { user_id } = req.decode_authorization as TokenPayload
+  const { body } = req
+  console.log(body);
+  const result = await userService.updateMe(user_id, body)
+  return res.json({
+    message: userMessages.UPDATE_PROFILE_USER_IS_SUCCESS,
+    result
+  })
+}
+
 /**
  * POST - /register: truyền body {email, password, confirm_password, date_of_birth, name} -> validate các input -> truyền body {} vào services tạo AT và RT trả về; lưu RT vào db
 
@@ -154,5 +170,7 @@ export const getMeController = async (req: Request, res: Response) => {
 
  * POST - /reset-password: truyền body {forgot_password_token, password, confirm_password} -> validate các input -> verify forgot_password_token -> lấy ra user_id -> truyền user_id và password vào services -> dò tìm và update password mới và forgot_password_token: ""
 
- * GET - /me -> verify AT -> lấy user_id -> truyền user_id vào services
+ * GET - /me -> verify AT -> lấy user_id -> truyền user_id vào services -> trả về user
+
+ * PATCH - /me -> verify AT -> lấy verify -> check trạng thái verify -> đã verify thì được update
 */

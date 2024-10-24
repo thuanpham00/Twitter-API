@@ -8,11 +8,15 @@ import userService from "~/services/user.services"
 import { verifyToken } from "~/utils/jwt"
 import { hashPassword } from "~/utils/scripto"
 import { validate } from "~/utils/validations"
-import { Request } from "express"
+import { NextFunction, Request, Response } from "express"
 import { ObjectId } from "mongodb"
-// dùng `express-validator`
-// validate input phía server
+import { TokenPayload } from "~/models/requests/User.requests"
+import { UserVerifyStatus } from "~/constants/enum"
 
+// dùng `express-validator`
+// validate input phía server - validate ở tầng ứng dụng
+
+// cầm validate thêm ở tầng mongodb (chặt chẽ hơn)
 const passwordSchema: ParamSchema = {
   isString: {
     errorMessage: userMessages.PASSWORD_MUST_BE_A_STRING
@@ -118,25 +122,37 @@ const forgotPasswordSchema: ParamSchema = {
   }
 }
 
+const nameSchema: ParamSchema = {
+  isLength: {
+    options: {
+      min: 1,
+      max: 100
+    },
+    errorMessage: userMessages.NAME_LENGTH
+  },
+  notEmpty: {
+    errorMessage: userMessages.NAME_IS_REQUIRED
+  }, // không rỗng,
+  isString: {
+    errorMessage: userMessages.NAME_MUST_BE_A_STRING
+  },
+  trim: true // lọc bỏ khoảng trắng
+}
+
+const dateOfBirthSchema: ParamSchema = {
+  isISO8601: {
+    options: {
+      strict: true, // yc tuân thủ chuẩn iso 8601
+      strictSeparator: true // yc dấu phân cách "-" giữa ngày tháng năm của date (2024-01-01)
+    },
+    errorMessage: userMessages.DATE_OF_BIRTH_MUST_BE_STRING
+  } // new Date().toISOString()
+}
+
 export const registerValidator = validate(
   checkSchema(
     {
-      name: {
-        isLength: {
-          options: {
-            min: 1,
-            max: 100
-          },
-          errorMessage: userMessages.NAME_LENGTH
-        },
-        notEmpty: {
-          errorMessage: userMessages.NAME_IS_REQUIRED
-        }, // không rỗng,
-        isString: {
-          errorMessage: userMessages.NAME_MUST_BE_A_STRING
-        },
-        trim: true // lọc bỏ khoảng trắng
-      },
+      name: nameSchema,
       email: {
         isEmail: {
           errorMessage: userMessages.EMAIL_IS_INVALID
@@ -155,15 +171,7 @@ export const registerValidator = validate(
       },
       password: passwordSchema,
       confirm_password: confirmPasswordSchema,
-      date_of_birth: {
-        isISO8601: {
-          options: {
-            strict: true, // yc tuân thủ chuẩn iso 8601
-            strictSeparator: true // yc dấu phân cách "-" giữa ngày tháng năm của date (2024-01-01)
-          },
-          errorMessage: userMessages.DATE_OF_BIRTH_MUST_BE_STRING
-        } // new Date().toISOString()
-      }
+      date_of_birth: dateOfBirthSchema
     },
     ["body"]
   ) // check validate trong phần body
@@ -360,6 +368,122 @@ export const resetPasswordValidator = validate(
       password: passwordSchema,
       confirm_password: confirmPasswordSchema,
       forgot_password_token: forgotPasswordSchema
+    },
+    ["body"]
+  )
+)
+
+export const verifiedUserValidator = (req: Request, res: Response, next: NextFunction) => {
+  const { verify } = req.decode_authorization as TokenPayload
+  if (verify !== UserVerifyStatus.Verified) {
+    return next(
+      new ErrorWithStatus({
+        message: userMessages.USER_NOT_VERIFIED,
+        status: httpStatus.FORBIDDEN
+      })
+    )
+  }
+  next()
+}
+// trong cái decode_authorization này có user_id và verify -> xác định user này đã verify chưa -> nếu chưa thì báo lỗi & nếu rồi thì next()
+
+export const updateMeValidator = validate(
+  checkSchema(
+    {
+      name: {
+        // spread operator
+        ...nameSchema,
+        optional: true,
+        notEmpty: undefined
+      },
+      date_of_birth: {
+        ...dateOfBirthSchema,
+        optional: true
+      },
+      bio: {
+        optional: true,
+        isString: {
+          errorMessage: userMessages.BIO_MUST_BE_A_STRING
+        },
+        trim: true,
+        isLength: {
+          options: {
+            min: 1,
+            max: 200
+          },
+          errorMessage: userMessages.NAME_LENGTH
+        }
+      },
+      location: {
+        optional: true, // ko bắt buộc
+        isString: {
+          errorMessage: userMessages.LOCATION_MUST_BE_A_STRING
+        },
+        trim: true,
+        isLength: {
+          options: {
+            min: 1,
+            max: 200
+          },
+          errorMessage: userMessages.LOCATION_LENGTH
+        }
+      },
+      website: {
+        optional: true, // ko bắt buộc
+        isString: {
+          errorMessage: userMessages.WEBSITE_MUST_BE_A_STRING
+        },
+        trim: true,
+        isLength: {
+          options: {
+            min: 1,
+            max: 200
+          },
+          errorMessage: userMessages.WEBSITE_LENGTH
+        }
+      },
+      username: {
+        optional: true, // ko bắt buộc
+        isString: {
+          errorMessage: userMessages.USERNAME_MUST_BE_A_STRING
+        },
+        trim: true,
+        isLength: {
+          options: {
+            min: 1,
+            max: 50
+          },
+          errorMessage: userMessages.USERNAME_LENGTH
+        }
+      },
+      avatar: {
+        optional: true, // ko bắt buộc
+        isString: {
+          errorMessage: userMessages.AVATAR_LENGTH
+        },
+        trim: true,
+        isLength: {
+          options: {
+            min: 1,
+            max: 400
+          },
+          errorMessage: userMessages.AVATAR_LENGTH
+        }
+      },
+      cover_photo: {
+        optional: true, // ko bắt buộc truyền lên
+        isString: {
+          errorMessage: userMessages.COVER_PHOTO_MUST_BE_A_STRING
+        },
+        trim: true,
+        isLength: {
+          options: {
+            min: 1,
+            max: 400
+          },
+          errorMessage: userMessages.COVER_PHOTO_LENGTH
+        }
+      }
     },
     ["body"]
   )

@@ -1,6 +1,6 @@
 import User from "~/models/schemas/User.schema"
 import databaseService from "./database.services"
-import { RegisterReqBody } from "~/models/requests/User.requests"
+import { RegisterReqBody, UpdateMeReqBody } from "~/models/requests/User.requests"
 import { hashPassword } from "~/utils/scripto"
 import { signToken } from "~/utils/jwt"
 import { TokenType, UserVerifyStatus } from "~/constants/enum"
@@ -11,12 +11,14 @@ import { userMessages } from "~/constants/message"
 config()
 class UserService {
   // các phương thức (method)
-  private signAccessToken(user_id: string) {
+  private signAccessToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
     return signToken({
       payload: {
         user_id,
+        verify,
         token_type: TokenType.AccessToken
       },
+      // khi decode có thể lấy ra trạng thái user verify
       privateKey: process.env.JWT_ACCESS_TOKEN_SECRET as string,
       options: {
         expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN
@@ -24,10 +26,11 @@ class UserService {
     })
   }
 
-  private signRefreshToken(user_id: string) {
+  private signRefreshToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
     return signToken({
       payload: {
         user_id,
+        verify,
         token_type: TokenType.RefreshToken
       },
       privateKey: process.env.JWT_REFRESH_TOKEN_SECRET as string,
@@ -37,10 +40,11 @@ class UserService {
     })
   }
 
-  private signEmailVerify(user_id: string) {
+  private signEmailVerify({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
     return signToken({
       payload: {
         user_id,
+        verify,
         token_type: TokenType.EmailVerifyToken
       },
       privateKey: process.env.JWT_VERIFY_EMAIL_SECRET as string,
@@ -50,10 +54,11 @@ class UserService {
     })
   }
 
-  private signForgotPassword(user_id: string) {
+  private signForgotPassword({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
     return signToken({
       payload: {
         user_id,
+        verify,
         token_type: TokenType.ForgotPasswordToken
       },
       privateKey: process.env.JWT_FORGOT_PASSWORD_SECRET as string,
@@ -63,14 +68,17 @@ class UserService {
     })
   }
 
-  private signAccessAndRefreshToken(user_id: string) {
-    return Promise.all([this.signAccessToken(user_id), this.signRefreshToken(user_id)])
+  private signAccessAndRefreshToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
+    return Promise.all([this.signAccessToken({ user_id, verify }), this.signRefreshToken({ user_id, verify })])
   }
 
   async register(payload: RegisterReqBody) {
     // thêm data vào collection users
     const user_id = new ObjectId() // 1 là tự tạo 2 là MongoDB tự tạo giùm
-    const emailVerifyToken = await this.signEmailVerify(user_id.toString())
+    const emailVerifyToken = await this.signEmailVerify({
+      user_id: user_id.toString(),
+      verify: UserVerifyStatus.Unverified
+    })
     await databaseService.users.insertOne(
       new User({
         ...payload,
@@ -80,7 +88,10 @@ class UserService {
         password: hashPassword(payload.password)
       })
     ) // await đợi 1 kết quả trả về từ 'promise'
-    const [access_token, refresh_token] = await this.signAccessAndRefreshToken(user_id.toString())
+    const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
+      user_id: user_id.toString(),
+      verify: UserVerifyStatus.Unverified
+    })
 
     // thêm data vào collection refresh_tokens
     await databaseService.refreshTokens.insertOne(
@@ -97,8 +108,11 @@ class UserService {
   }
 
   // chỉ có register, login, verify-email mới sign và trả về AT và RT
-  async login(user_id: string) {
-    const [access_token, refresh_token] = await this.signAccessAndRefreshToken(user_id)
+  async login({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
+    const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
+      user_id: user_id.toString(),
+      verify: verify
+    })
 
     await databaseService.refreshTokens.insertOne(
       new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token })
@@ -130,7 +144,10 @@ class UserService {
     // )
     // const [access_token, refresh_token] = await this.signAccessAndRefreshToken(user_id.toString())
     const [token] = await Promise.all([
-      this.signAccessAndRefreshToken(user_id.toString()),
+      this.signAccessAndRefreshToken({
+        user_id: user_id.toString(),
+        verify: UserVerifyStatus.Verified
+      }),
       databaseService.users.updateOne(
         {
           _id: new ObjectId(user_id) // dò tìm theo id và set giá trị nhanh hơn
@@ -156,7 +173,10 @@ class UserService {
 
   // reset lại email-verify-token
   async resendVerifyEmail(user_id: string) {
-    const email_verify_token = await this.signEmailVerify(user_id)
+    const email_verify_token = await this.signEmailVerify({
+      user_id: user_id.toString(),
+      verify: UserVerifyStatus.Unverified
+    })
     console.log("Gửi email: ", email_verify_token)
 
     await databaseService.users.updateOne(
@@ -178,8 +198,11 @@ class UserService {
     }
   }
 
-  async forgotPassword(user_id: string) {
-    const forgot_password_token = await this.signForgotPassword(user_id)
+  async forgotPassword({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
+    const forgot_password_token = await this.signForgotPassword({
+      user_id: user_id.toString(),
+      verify: verify
+    })
     // tạo token forgot password
     await databaseService.users.updateOne(
       {
@@ -227,7 +250,33 @@ class UserService {
       { _id: new ObjectId(user_id) },
       {
         projection: {
-          password: 0, // lọc thuộc tính trả về // ko trả về password
+          // lọc thuộc tính trả về // ko trả về password ...
+          password: 0,
+          email_verify_token: 0,
+          forgot_password_token: 0
+        }
+      }
+    )
+    return user
+  }
+
+  async updateMe(user_id: string, payload: UpdateMeReqBody) {
+    const _payload = payload.date_of_birth ? { ...payload, date_of_birth: new Date(payload.date_of_birth) } : payload
+    const user = await databaseService.users.findOneAndUpdate(
+      { _id: new ObjectId(user_id) },
+      {
+        $set: {
+          ...(_payload as UpdateMeReqBody & { date_of_birth?: Date })
+        },
+        $currentDate: {
+          updated_at: true
+        }
+      },
+      {
+        returnDocument: "after", // cập nhật liền sau khi update (trên postman)
+        projection: {
+          // lọc thuộc tính trả về // ko trả về password ...
+          password: 0,
           email_verify_token: 0,
           forgot_password_token: 0
         }
@@ -240,3 +289,5 @@ class UserService {
 const userService = new UserService()
 export default userService
 // nơi đây thực hiện các method logic xử lý db
+
+// 2 method updateOne (chỉ update, ko trả về document) và findOneAndUpdate (update, và trả về document)
