@@ -145,7 +145,7 @@ export const getMeController = async (req: Request, res: Response) => {
 export const updateMeController = async (req: Request<ParamsDictionary, any, UpdateMeReqBody>, res: Response) => {
   const { user_id } = req.decode_authorization as TokenPayload
   const { body } = req
-  console.log(body);
+  console.log(body)
   const result = await userService.updateMe(user_id, body)
   return res.json({
     message: userMessages.UPDATE_PROFILE_USER_IS_SUCCESS,
@@ -153,24 +153,11 @@ export const updateMeController = async (req: Request<ParamsDictionary, any, Upd
   })
 }
 
-/**
- * POST - /register: truyền body {email, password, confirm_password, date_of_birth, name} -> validate các input -> truyền body {} vào services tạo AT và RT trả về; lưu RT vào db
-
- * POST - /login: truyền body {email, password} -> validate các input -> dò tìm user lấy ra user_id -> truyền user_id vào services tạo AT và RT trả về; lưu RT vào db
-
- * POST - /logout: truyền body {refresh_token} -> validate các input -> xóa refresh_token khỏi db
-
- * POST - /verify-email: truyền body {email_verify_token}: đã tạo lúc register -> verify ra lấy user_id -> truyền user_id vào services -> update email_verify_token = "" -> tạo AT và RT trả về db
-
- * POST - /resend-verify-email: truyền body {rỗng} -> sử dụng AT -> verify ra lấy user_id -> truyền user_id vào services tạo lại email_verify_token
-
- * POST - /forgot-password: truyền body {email} -> dò tìm email -> và lấy ra user_id -> truyền user_id vào services -> update forgot_password_token (tạo ra)
-
- * POST - /verify-forgot-password: truyền body {forgot_password_token} -> verify xong lấy ra user_id -> truyền user_id để dò tìm user -> thành công
-
- * POST - /reset-password: truyền body {forgot_password_token, password, confirm_password} -> validate các input -> verify forgot_password_token -> lấy ra user_id -> truyền user_id và password vào services -> dò tìm và update password mới và forgot_password_token: ""
-
- * GET - /me -> verify AT -> lấy user_id -> truyền user_id vào services -> trả về user
-
- * PATCH - /me -> verify AT -> lấy verify -> check trạng thái verify -> đã verify thì được update
-*/
+export const getProfileController = async (req: Request<{ username: string }>, res: Response) => {
+  const { username } = req.params
+  const result = await userService.getProfile(username)
+  return res.json({
+    message: userMessages.GET_USER_PROFILE_IS_SUCCESS,
+    result
+  })
+}

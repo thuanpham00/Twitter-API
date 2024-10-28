@@ -2,6 +2,7 @@ import { Router } from "express"
 import {
   forgotPasswordController,
   getMeController,
+  getProfileController,
   loginController,
   logoutController,
   registerController,
@@ -41,7 +42,7 @@ userRouter.post("/register", registerValidator, wrapRequestHandler(registerContr
  * Description: login user
  * Path: /login
  * Method: POST
- * Body: { name: string, email: string, password: string}
+ * Body: { email: string, password: string}
  */
 userRouter.post("/login", loginValidator, wrapRequestHandler(loginController))
 
@@ -120,9 +121,25 @@ userRouter.patch(
   accessTokenValidator,
   verifiedUserValidator,
   updateMeValidator,
-  filterMiddleware<UpdateMeReqBody>(["name", "date_of_birth", "bio", "location", "website", "username", "avatar", "cover_photo"]),
+  filterMiddleware<UpdateMeReqBody>([
+    "name",
+    "date_of_birth",
+    "bio",
+    "location",
+    "website",
+    "username",
+    "avatar",
+    "cover_photo"
+  ]),
   wrapRequestHandler(updateMeController)
 )
+
+/**
+ * Description: get user profile
+ * Path: /:username
+ * Method: GET
+ */
+userRouter.get("/:username", wrapRequestHandler(getProfileController))
 
 export default userRouter
 

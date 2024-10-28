@@ -231,7 +231,7 @@ export const accessTokenValidator = validate(
               ;(req as Request).decode_authorization = decode_authorization // chứa user_id
             } catch (error) {
               throw new ErrorWithStatus({
-                message: (error as JsonWebTokenError).message,
+                message: (error as JsonWebTokenError).message, // lỗi trong hàm verifyToken
                 status: httpStatus.UNAUTHORIZED
               })
             }
@@ -274,7 +274,7 @@ export const refreshTokenValidator = validate(
             } catch (error) {
               if (error instanceof JsonWebTokenError) {
                 throw new ErrorWithStatus({
-                  message: error.message,
+                  message: error.message, // lỗi trong hàm verifyToken
                   status: httpStatus.UNAUTHORIZED
                 })
               }
@@ -311,7 +311,7 @@ export const emailVerifyTokenValidator = validate(
             } catch (error) {
               if (error instanceof JsonWebTokenError) {
                 throw new ErrorWithStatus({
-                  message: error.message,
+                  message: error.message, // lỗi trong hàm verifyToken
                   status: httpStatus.UNAUTHORIZED
                 })
               }
