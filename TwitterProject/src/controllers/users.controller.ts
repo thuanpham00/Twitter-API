@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express"
 import userService from "~/services/user.services"
 import { ParamsDictionary } from "express-serve-static-core"
 import {
+  FollowReqBody,
   ForgotPasswordBody,
   LogicReqBody,
   LogoutBody,
@@ -61,7 +62,7 @@ export const verifyEmailController = async (req: Request<ParamsDictionary, any, 
     return res.status(httpStatus.NOTFOUND).json({ message: userMessages.USER_NOT_FOUND })
   }
   // t.h đã verify thì mình sẽ không báo lỗi, mà mình sẽ trả về stt ok với message (đã verify trước đó về)
-  if (user.email_verify_token === "") {
+  if (user.verify === UserVerifyStatus.Verified) {
     return res.status(httpStatus.OK).json({ message: userMessages.EMAIL_VERIFY_ALREADY_BEFORE })
   }
   const result = await userService.verifyEmail(user_id)
@@ -102,7 +103,7 @@ export const forgotPasswordController = async (
   const result = await userService.forgotPassword({
     user_id: (user_id as ObjectId)?.toString(),
     verify: (user as User).verify
-  })
+  }) // giống loginController
 
   return res.json({
     message: result.message
@@ -154,10 +155,19 @@ export const updateMeController = async (req: Request<ParamsDictionary, any, Upd
 }
 
 export const getProfileController = async (req: Request<{ username: string }>, res: Response) => {
-  const { username } = req.params
+  const { username } = req.params // truyền theo kiểu params !== body
   const result = await userService.getProfile(username)
   return res.json({
     message: userMessages.GET_USER_PROFILE_IS_SUCCESS,
     result
+  })
+}
+
+export const followController = async (req: Request<ParamsDictionary, any, FollowReqBody>, res: Response) => {
+  const { user_id } = req.decode_authorization as TokenPayload
+  const { followed_user_id } = req.body
+  const result = await userService.follow(user_id, followed_user_id)
+  return res.json({
+    message: result.message
   })
 }

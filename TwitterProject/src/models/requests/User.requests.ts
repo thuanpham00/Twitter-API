@@ -20,6 +20,11 @@ export interface UpdateMeReqBody {
   avatar?: string
   cover_photo?: string
 }
+
+export interface FollowReqBody {
+  followed_user_id: string
+}
+
 export interface LogicReqBody {
   email: string
   password: string

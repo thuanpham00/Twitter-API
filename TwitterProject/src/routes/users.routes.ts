@@ -1,5 +1,6 @@
 import { Router } from "express"
 import {
+  followController,
   forgotPasswordController,
   getMeController,
   getProfileController,
@@ -16,6 +17,7 @@ import { filterMiddleware } from "~/middlewares/common.middlewares"
 import {
   accessTokenValidator,
   emailVerifyTokenValidator,
+  followValidator,
   forgotPasswordValidator,
   loginValidator,
   refreshTokenValidator,
@@ -141,6 +143,20 @@ userRouter.patch(
  */
 userRouter.get("/:username", wrapRequestHandler(getProfileController))
 
+/**
+ * Description: Follow someone
+ * Path: /follow
+ * Method: POST
+ * Body: {followed_user_id: string}
+ */
+userRouter.post(
+  "/follow",
+  accessTokenValidator,
+  verifiedUserValidator,
+  followValidator,
+  wrapRequestHandler(followController)
+)
+
 export default userRouter
 
 // validate: check lỗi middleware, nếu có lỗi ko chạy đến controller
@@ -186,4 +202,3 @@ export default userRouter
  */
 
 // route nào cần AccessToken thì mới cần truyền vào headers để xác thực người dùng ,còn route nào ko cần AccessToken thì ko cần truyền
-// test

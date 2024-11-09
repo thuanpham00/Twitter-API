@@ -152,7 +152,6 @@ const dateOfBirthSchema: ParamSchema = {
 export const registerValidator = validate(
   checkSchema(
     {
-      name: nameSchema,
       email: {
         isEmail: {
           errorMessage: userMessages.EMAIL_IS_INVALID
@@ -171,6 +170,7 @@ export const registerValidator = validate(
       },
       password: passwordSchema,
       confirm_password: confirmPasswordSchema,
+      name: nameSchema,
       date_of_birth: dateOfBirthSchema
     },
     ["body"]
@@ -488,3 +488,32 @@ export const updateMeValidator = validate(
     ["body"]
   )
 )
+
+export const followValidator = validate(
+  checkSchema({
+    followed_user_id: {
+      custom: {
+        options: async (value, { req }) => {
+          if (!ObjectId.isValid(value)) {
+            throw new ErrorWithStatus({
+              message: userMessages.INVALID_FOLLOWED_USER_ID,
+              status: httpStatus.NOTFOUND
+            })
+          }
+
+          const followed_user = await databaseService.users.findOne({ _id: new ObjectId(value) })
+          if (followed_user === null) {
+            throw new ErrorWithStatus({
+              message: userMessages.USER_NOT_FOUND,
+              status: httpStatus.NOTFOUND
+            })
+          }
+        }
+      }
+    }
+  })
+)
+
+// 1 là viết middleware theo dạng request handler
+// 2 là viết check schema
+// nó đều là check input đầu vào trước khi tới controller

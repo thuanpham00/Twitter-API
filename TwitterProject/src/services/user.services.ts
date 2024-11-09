@@ -10,6 +10,7 @@ import { config } from "dotenv"
 import { userMessages } from "~/constants/message"
 import { ErrorWithStatus } from "~/models/Errors"
 import httpStatus from "~/constants/httpStatus"
+import Followers from "~/models/schemas/Followers.schema"
 config()
 class UserService {
   // các phương thức (method)
@@ -307,6 +308,28 @@ class UserService {
       throw new ErrorWithStatus({ message: userMessages.USER_NOT_FOUND, status: httpStatus.NOTFOUND })
     }
     return user
+  }
+
+  async follow(user_id: string, followed_user_id: string) {
+    const followed_user = await databaseService.followers.findOne({
+      user_id: new ObjectId(user_id),
+      follower_user_id: new ObjectId(followed_user_id)
+    })
+    // check xem đã follow chưa, nếu follow rồi thì không insert nữa, nếu chưa follow thì có thể insert
+    if (followed_user === null) {
+      await databaseService.followers.insertOne(
+        new Followers({
+          user_id: new ObjectId(user_id),
+          follower_user_id: new ObjectId(followed_user_id)
+        })
+      )
+      return {
+        message: userMessages.FOLLOW_SUCCESS
+      }
+    }
+    return {
+      message: userMessages.FOLLOW_ALREADY
+    }
   }
 }
 
