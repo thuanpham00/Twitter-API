@@ -1,5 +1,6 @@
 import { Router } from "express"
 import {
+  changePasswordController,
   followController,
   forgotPasswordController,
   getMeController,
@@ -9,6 +10,7 @@ import {
   registerController,
   resendVerifyEmailController,
   resetPasswordController,
+  unfollowController,
   updateMeController,
   verifyEmailController,
   verifyForgotPasswordController
@@ -16,6 +18,7 @@ import {
 import { filterMiddleware } from "~/middlewares/common.middlewares"
 import {
   accessTokenValidator,
+  changePasswordValidator,
   emailVerifyTokenValidator,
   followValidator,
   forgotPasswordValidator,
@@ -23,6 +26,7 @@ import {
   refreshTokenValidator,
   registerValidator,
   resetPasswordValidator,
+  unfollowValidator,
   updateMeValidator,
   verifiedUserValidator,
   verifyForgotPasswordTokenValidator
@@ -147,6 +151,7 @@ userRouter.get("/:username", wrapRequestHandler(getProfileController))
  * Description: Follow someone
  * Path: /follow
  * Method: POST
+ * Header: {Authorization: Bearer <access_token>}
  * Body: {followed_user_id: string}
  */
 userRouter.post(
@@ -155,6 +160,35 @@ userRouter.post(
   verifiedUserValidator,
   followValidator,
   wrapRequestHandler(followController)
+)
+
+/**
+ * Description: unFollow someone
+ * Path: /follow/:user_id
+ * Method: DELETE
+ * Header: {Authorization: Bearer <access_token>}
+ */
+userRouter.delete(
+  "/follow/:user_id",
+  accessTokenValidator,
+  verifiedUserValidator,
+  unfollowValidator,
+  wrapRequestHandler(unfollowController)
+)
+
+/**
+ * Description: change password user
+ * Path: /change-password
+ * Method: PUT
+ * Header: {Authorization: Bearer <access_token>}
+ * Body: {old_password: string, password: string, confirm_password: string}
+ */
+userRouter.put(
+  "/change-password",
+  accessTokenValidator,
+  verifiedUserValidator,
+  changePasswordValidator,
+  wrapRequestHandler(changePasswordController)
 )
 
 export default userRouter

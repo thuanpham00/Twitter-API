@@ -25,6 +25,10 @@ export interface FollowReqBody {
   followed_user_id: string
 }
 
+export interface UnFollowReqParams {
+  user_id: string
+}
+
 export interface LogicReqBody {
   email: string
   password: string
@@ -52,6 +56,12 @@ export interface VerifyForgotPasswordBody {
 }
 
 export interface ResetPasswordBody extends VerifyForgotPasswordBody {
+  password: string
+  confirm_password: string
+}
+
+export interface ChangePasswordReqBody {
+  old_password: string
   password: string
   confirm_password: string
 }

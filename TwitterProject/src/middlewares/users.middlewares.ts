@@ -12,6 +12,7 @@ import { NextFunction, Request, Response } from "express"
 import { ObjectId } from "mongodb"
 import { TokenPayload } from "~/models/requests/User.requests"
 import { UserVerifyStatus } from "~/constants/enum"
+import { REGEX_USERNAME } from "~/constants/regex"
 
 // dùng `express-validator`
 // validate input phía server - validate ở tầng ứng dụng
@@ -149,6 +150,27 @@ const dateOfBirthSchema: ParamSchema = {
   } // new Date().toISOString()
 }
 
+const userIdSchema: ParamSchema = {
+  custom: {
+    options: async (value, { req }) => {
+      if (!ObjectId.isValid(value)) {
+        throw new ErrorWithStatus({
+          message: userMessages.INVALID_USER_ID,
+          status: httpStatus.NOTFOUND
+        })
+      }
+
+      const followed_user = await databaseService.users.findOne({ _id: new ObjectId(value) })
+      if (followed_user === null) {
+        throw new ErrorWithStatus({
+          message: userMessages.USER_NOT_FOUND,
+          status: httpStatus.NOTFOUND
+        })
+      }
+    }
+  }
+}
+
 export const registerValidator = validate(
   checkSchema(
     {
@@ -228,7 +250,7 @@ export const accessTokenValidator = validate(
                 token: accessToken,
                 secretOrPublicKey: process.env.JWT_ACCESS_TOKEN_SECRET as string
               })
-              ;(req as Request).decode_authorization = decode_authorization // chứa user_id
+              ;(req as Request).decode_authorization = decode_authorization // chứa user_id và verify
             } catch (error) {
               throw new ErrorWithStatus({
                 message: (error as JsonWebTokenError).message, // lỗi trong hàm verifyToken
@@ -448,12 +470,17 @@ export const updateMeValidator = validate(
           errorMessage: userMessages.USERNAME_MUST_BE_A_STRING
         },
         trim: true,
-        isLength: {
-          options: {
-            min: 1,
-            max: 50
-          },
-          errorMessage: userMessages.USERNAME_LENGTH
+        custom: {
+          options: async (value: string) => {
+            if (!REGEX_USERNAME.test(value)) {
+              throw new Error(userMessages.USERNAME_INVALID)
+            }
+            const user = await databaseService.users.findOne({ username: value })
+            // nếu đã tồn tại username trong db thì không cho phép update
+            if (user !== null) {
+              throw new Error(userMessages.USERNAME_EXISTED)
+            }
+          }
         }
       },
       avatar: {
@@ -490,28 +517,54 @@ export const updateMeValidator = validate(
 )
 
 export const followValidator = validate(
-  checkSchema({
-    followed_user_id: {
-      custom: {
-        options: async (value, { req }) => {
-          if (!ObjectId.isValid(value)) {
-            throw new ErrorWithStatus({
-              message: userMessages.INVALID_FOLLOWED_USER_ID,
-              status: httpStatus.NOTFOUND
-            })
-          }
+  checkSchema(
+    {
+      followed_user_id: userIdSchema
+    },
+    ["body"]
+  )
+)
 
-          const followed_user = await databaseService.users.findOne({ _id: new ObjectId(value) })
-          if (followed_user === null) {
-            throw new ErrorWithStatus({
-              message: userMessages.USER_NOT_FOUND,
-              status: httpStatus.NOTFOUND
-            })
+export const unfollowValidator = validate(
+  checkSchema(
+    {
+      user_id: userIdSchema
+    },
+    ["params"]
+  )
+)
+
+export const changePasswordValidator = validate(
+  checkSchema(
+    {
+      old_password: {
+        ...passwordSchema,
+        custom: {
+          options: async (value, { req }) => {
+            const { user_id } = (req as Request).decode_authorization as TokenPayload
+            const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) })
+            if (!user) {
+              throw new ErrorWithStatus({
+                message: userMessages.USER_NOT_FOUND,
+                status: httpStatus.NOTFOUND
+              })
+            }
+            const { password } = user
+            const isMatch = hashPassword(value) === password
+            if (!isMatch) {
+              throw new ErrorWithStatus({
+                message: userMessages.OLD_PASSWORD_NOT_MATCH,
+                status: httpStatus.UNAUTHORIZED
+              })
+            }
           }
         }
-      }
-    }
-  })
+      },
+      password: passwordSchema,
+      confirm_password: confirmPasswordSchema
+    },
+    ["body"]
+  )
 )
 
 // 1 là viết middleware theo dạng request handler
