@@ -376,4 +376,8 @@ const userService = new UserService()
 export default userService
 // nơi đây thực hiện các method logic xử lý db
 
-// 2 method updateOne (chỉ update, ko trả về document) và findOneAndUpdate (update, và trả về document)
+// updateOne (chỉ update, ko trả về document) và
+// findOneAndUpdate (update, và trả về document)
+// insertOne
+// findOne
+// deleteOne
