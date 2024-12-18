@@ -6,6 +6,7 @@ import {
   getMeController,
   getProfileController,
   loginController,
+  loginGoogleController,
   logoutController,
   registerController,
   resendVerifyEmailController,
@@ -51,6 +52,14 @@ userRouter.post("/register", registerValidator, wrapRequestHandler(registerContr
  * Body: { email: string, password: string}
  */
 userRouter.post("/login", loginValidator, wrapRequestHandler(loginController))
+
+/**
+ * Description: OAuth with Google
+ * Path: /oauth/google
+ * Method: GET
+ * Query: {code: string}
+ */
+userRouter.get("/oauth/google", wrapRequestHandler(loginGoogleController))
 
 /**
  * Description: Logout a new user

@@ -11,6 +11,7 @@ import { userMessages } from "~/constants/message"
 import { ErrorWithStatus } from "~/models/Errors"
 import httpStatus from "~/constants/httpStatus"
 import Followers from "~/models/schemas/Followers.schema"
+import axios from "axios"
 config()
 class UserService {
   // các phương thức (method)
@@ -114,7 +115,7 @@ class UserService {
   // chỉ có register, login, verify-email mới sign và trả về AT và RT
   async login({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
     const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
-      user_id: user_id.toString(),
+      user_id: user_id,
       verify: verify
     })
 
@@ -122,6 +123,93 @@ class UserService {
       new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token })
     )
     return { access_token, refresh_token }
+  }
+
+  private async getOauthGoogleToken(code: string) {
+    const body = {
+      code,
+      client_id: process.env.GOOGLE_CLIENT_ID,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET,
+      redirect_uri: process.env.GOOGLE_REDIRECT_URI,
+      grant_type: "authorization_code"
+    }
+
+    const { data } = await axios.post("https://oauth2.googleapis.com/token", body, {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      }
+    }) // gửi giá trị code lên api google và lấy được id_token và access_token
+
+    return data as {
+      access_token: string
+      id_token: string
+    }
+  }
+
+  private async getGoogleInfo(id_token: string, access_token: string) {
+    // gửi giá trị AT và id_token lên api google và lấy được info user
+    const { data } = await axios.get("https://www.googleapis.com/oauth2/v1/userinfo", {
+      params: {
+        access_token,
+        alt: "json"
+      },
+      headers: {
+        Authorization: `Bearer ${id_token}`
+      }
+    })
+    return data as {
+      id: string
+      email: string
+      verified_email: boolean
+      name: string
+      family_name: string
+      picture: string
+    }
+  }
+
+  async loginGoogle(code: string) {
+    const { access_token, id_token } = await this.getOauthGoogleToken(code)
+    const userInfo = await this.getGoogleInfo(id_token, access_token)
+    if (!userInfo.verified_email) {
+      throw new ErrorWithStatus({
+        message: userMessages.EMAIL_NOT_VERIFIED,
+        status: httpStatus.BAD_REQUESTED
+      })
+    }
+    // nếu tồn tại email trong csdl thì login vào
+    // còn chưa tồn tại thì tạo mới user
+    const findUser = await databaseService.users.findOne({ email: userInfo.email })
+    if (findUser) {
+      const user_id = findUser?._id as ObjectId
+      const verifyStatus = findUser?.verify as UserVerifyStatus
+      const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
+        user_id: user_id.toString(),
+        verify: verifyStatus
+      })
+
+      await databaseService.refreshTokens.insertOne(new RefreshToken({ user_id: user_id, token: refresh_token }))
+      return {
+        access_token,
+        refresh_token,
+        newUser: 0,
+        verify: userInfo.verified_email
+      }
+    } else {
+      // random password
+      const random = Math.random().toString(36).substring(2, 15)
+      const data = await this.register({
+        email: userInfo.email,
+        name: userInfo.name,
+        date_of_birth: new Date().toISOString(),
+        password: random,
+        confirm_password: random
+      })
+      return {
+        ...data,
+        newUser: 1,
+        verify: UserVerifyStatus.Unverified
+      }
+    }
   }
 
   async logout(refresh_token: string) {
@@ -169,6 +257,9 @@ class UserService {
       )
     ])
     const [access_token, refresh_token] = token
+    await databaseService.refreshTokens.insertOne(
+      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token })
+    )
     return {
       access_token,
       refresh_token
@@ -376,8 +467,8 @@ const userService = new UserService()
 export default userService
 // nơi đây thực hiện các method logic xử lý db
 
-// updateOne (chỉ update, ko trả về document) và
+// updateOne (chỉ update, ko trả về document)
 // findOneAndUpdate (update, và trả về document)
-// insertOne
-// findOne
+// insertOne (trả về document)
+// findOne (trả về document)
 // deleteOne

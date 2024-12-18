@@ -21,7 +21,8 @@ import { userMessages } from "~/constants/message"
 import databaseService from "~/services/database.services"
 import httpStatus from "~/constants/httpStatus"
 import { UserVerifyStatus } from "~/constants/enum"
-import { pick } from "lodash"
+import { config } from "dotenv"
+config()
 
 export const registerController = async (
   req: Request<ParamsDictionary, any, RegisterReqBody>,
@@ -40,12 +41,20 @@ export const registerController = async (
 export const loginController = async (req: Request<ParamsDictionary, any, LogicReqBody>, res: Response) => {
   const { user } = req
   const user_id = (user as User)._id as ObjectId
+  const verify = (user as User).verify
   // throw new Error("Not implemented")
-  const result = await userService.login({ user_id: user_id.toString(), verify: (user as User).verify })
+  const result = await userService.login({ user_id: user_id.toString(), verify: verify })
   return res.json({
     message: userMessages.LOGIN_SUCCESS,
     result
   })
+}
+
+export const loginGoogleController = async (req: Request, res: Response) => {
+  const { code } = req.query
+  const result = await userService.loginGoogle(code as string)
+  const urlRedirect = `${process.env.CLIENT_REDIRECT_CALLBACK}?access_token=${result.access_token}&refresh_token=${result.refresh_token}&new_user=${result.newUser}&verify=${result.verify}`
+  return res.redirect(urlRedirect)
 }
 
 export const logoutController = async (req: Request<ParamsDictionary, any, LogoutBody>, res: Response) => {
@@ -102,9 +111,10 @@ export const forgotPasswordController = async (
 ) => {
   const { user } = req
   const user_id = (user as User)._id
+  const verify = user?.verify as UserVerifyStatus
   const result = await userService.forgotPassword({
     user_id: (user_id as ObjectId)?.toString(),
-    verify: (user as User).verify
+    verify: verify
   }) // giống loginController
 
   return res.json({
