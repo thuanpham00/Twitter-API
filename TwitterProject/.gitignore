@@ -2,4 +2,5 @@ node_modules/
 dist/
 .env
 note.md
+uploads/
 client_secret_628829646854-d4l8s8kn3tih6hnm44t7df2e0elnl0i1.apps.googleusercontent.com.json

@@ -15,7 +15,7 @@ import {
   updateMeController,
   verifyEmailController,
   verifyForgotPasswordController
-} from "~/controllers/users.controller"
+} from "~/controllers/users.controllers"
 import { filterMiddleware } from "~/middlewares/common.middlewares"
 import {
   accessTokenValidator,
@@ -35,6 +35,7 @@ import {
 import { UpdateMeReqBody } from "~/models/requests/User.requests"
 import { wrapRequestHandler } from "~/utils/handlers"
 
+// xử lý các api liên quan tới user
 const userRouter = Router()
 
 /**

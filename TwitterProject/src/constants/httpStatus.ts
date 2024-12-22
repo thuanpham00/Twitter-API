@@ -6,7 +6,8 @@ const httpStatus = {
   UNAUTHORIZED: 401,
   NOTFOUND: 404,
   FORBIDDEN: 403,
-  INTERNAL_SERVER_ERROR: 500
+  INTERNAL_SERVER_ERROR: 500,
+  PARTIAL_CONTENT: 206
 } as const
 
 export default httpStatus

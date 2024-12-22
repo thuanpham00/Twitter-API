@@ -24,6 +24,8 @@ import { UserVerifyStatus } from "~/constants/enum"
 import { config } from "dotenv"
 config()
 
+// nó phân biệt và hiển thị dựa theo user_id (phân biệt như mã người dùng và select query ra danh sách ... dựa trên mã người dùng đó)
+
 export const registerController = async (
   req: Request<ParamsDictionary, any, RegisterReqBody>,
   res: Response,
@@ -53,6 +55,17 @@ export const loginController = async (req: Request<ParamsDictionary, any, LogicR
 export const loginGoogleController = async (req: Request, res: Response) => {
   const { code } = req.query
   const result = await userService.loginGoogle(code as string)
+
+  // RT luu cookie tại backEnd
+  // AT luu localStorage tại frontEnd
+  // res.cookie("refresh_token", result.refresh_token, {
+  //   httpOnly: true,
+  //   secure: true,
+  //   sameSite: "strict",
+  //   maxAge: 100 * 24 * 60 * 60 * 1000, // Đồng bộ thời gian sống cookie (100 ngày)
+  //   path: "/",
+  // });
+
   const urlRedirect = `${process.env.CLIENT_REDIRECT_CALLBACK}?access_token=${result.access_token}&refresh_token=${result.refresh_token}&new_user=${result.newUser}&verify=${result.verify}`
   return res.redirect(urlRedirect)
 }

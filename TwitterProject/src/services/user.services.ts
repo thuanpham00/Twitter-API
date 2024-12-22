@@ -176,8 +176,8 @@ class UserService {
         status: httpStatus.BAD_REQUESTED
       })
     }
-    // nếu tồn tại email trong csdl thì login vào
-    // còn chưa tồn tại thì tạo mới user
+    // nếu tồn tại email trong DB thì login vào (login)
+    // còn chưa tồn tại thì tạo mới user (register)
     const findUser = await databaseService.users.findOne({ email: userInfo.email })
     if (findUser) {
       const user_id = findUser?._id as ObjectId
@@ -204,6 +204,8 @@ class UserService {
         password: random,
         confirm_password: random
       })
+
+      // trong method register có xử lý sign token và lưu vào db
       return {
         ...data,
         newUser: 1,
@@ -217,6 +219,11 @@ class UserService {
     return {
       message: userMessages.LOGOUT_SUCCESS
     }
+
+    // RT sẽ lưu ở cookie - xóa ở cookie tại đây (client)
+    // AT sẽ lưu ở localStorage - xóa ở fe (client)
+
+    // Khi refresh_token hết hạn hay logout, server từ chối yêu cầu từ client (401) → client lúc này sẽ logout (xóa RT trong DB và đồng thời xóa cả AT và RT ở client) → login lại để được cấp lại AT và RT → tiếp tục.
   }
 
   async verifyEmail(user_id: string) {
