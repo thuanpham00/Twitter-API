@@ -8,6 +8,7 @@ import {
   loginController,
   loginGoogleController,
   logoutController,
+  refreshTokenController,
   registerController,
   resendVerifyEmailController,
   resetPasswordController,
@@ -70,6 +71,14 @@ userRouter.get("/oauth/google", wrapRequestHandler(loginGoogleController))
  * Body: { refresh_token: string }
  */
 userRouter.post("/logout", accessTokenValidator, refreshTokenValidator, wrapRequestHandler(logoutController))
+
+/**
+ * Description: Refresh token
+ * Path: /refresh-token
+ * Method: POST
+ * Body: { refresh_token: string }
+ */
+userRouter.post("/refresh-token", refreshTokenValidator, wrapRequestHandler(refreshTokenController))
 
 /**
  * Description: verify email when user click on the link in email

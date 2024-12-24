@@ -43,6 +43,10 @@ export interface LogoutBody {
   refresh_token: string
 }
 
+export interface RefreshTokenBody {
+  refresh_token: string
+}
+
 export interface VerifyEmailBody {
   email_verify_token: string
 }

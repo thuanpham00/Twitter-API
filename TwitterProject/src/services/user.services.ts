@@ -226,6 +226,32 @@ class UserService {
     // Khi refresh_token hết hạn hay logout, server từ chối yêu cầu từ client (401) → client lúc này sẽ logout (xóa RT trong DB và đồng thời xóa cả AT và RT ở client) → login lại để được cấp lại AT và RT → tiếp tục.
   }
 
+  async refreshToken({
+    user_id,
+    verify,
+    refresh_token
+  }: {
+    user_id: string
+    verify: UserVerifyStatus
+    refresh_token: string
+  }) {
+    const [token] = await Promise.all([
+      this.signAccessAndRefreshToken({ user_id, verify }),
+      databaseService.refreshTokens.deleteOne({ token: refresh_token })
+    ])
+    const [new_access_token, new_refresh_token] = token
+    await databaseService.refreshTokens.insertOne(
+      new RefreshToken({
+        user_id: new ObjectId(user_id),
+        token: new_refresh_token
+      })
+    )
+    return {
+      access_token: new_access_token,
+      refresh_token: new_refresh_token
+    }
+  }
+
   async verifyEmail(user_id: string) {
     // tạo giá trị cập nhật
     // mongoDB cập nhật giá trị

@@ -7,11 +7,13 @@ import { initFolder } from "./utils/file"
 import { config } from "dotenv"
 import { upload_image_dir, upload_video_dir } from "./constants/dir"
 import staticRouter from "./routes/static.routes"
+import cors from "cors"
 config()
 
 const app = express()
 const port = 4000
 
+app.use(cors())
 app.use(express.json()) // chuyển json sang thành obj
 app.use("/users", userRouter)
 app.use("/medias", mediaRouter)

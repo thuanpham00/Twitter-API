@@ -2,6 +2,7 @@ import fs from "fs"
 import { Request } from "express"
 import { File } from "formidable"
 import { upload_image_temp_dir, upload_video_dir, upload_video_temp_dir } from "~/constants/dir"
+import path from "path"
 
 // khởi tạo folder nếu chưa có
 export const initFolder = () => {
@@ -50,19 +51,35 @@ export const handleUploadImage = async (req: Request) => {
   })
 }
 
+// Cách xử lý khi upload video và encode
+// Có 2 giai đoạn
+// Upload video: Upload video thành công thì resolve về cho người dùng
+// Encode video: Khai báo thêm 1 url endpoint để check xem cái video đó đã encode xong chưa
+
 export const handleUploadVideo = async (req: Request) => {
   // do formidable v3 sử dụng ESModule mà dự án dùng commonJS nên cần chuyển formidable v3 sang commonJS để biên dịch chính xác
   const formidable = (await import("formidable")).default
+  // Cách để có được định dạng idname/idname.mp4
+  // ✅Cách 1: Tạo unique id cho video ngay từ đầu
+  // ❌Cách 2: Đợi video upload xong rồi tạo folder, move video vào
+  const nanoId = (await import("nanoid")).nanoid
+  const idName = nanoId()
+  const folderPath = path.resolve(upload_video_dir, idName)
+  fs.mkdirSync(folderPath) // tạo thư mục uploads/videos/idVideo
+
   const form = formidable({
-    uploadDir: upload_video_dir, // đường dẫn trỏ tới thư mục lưu
-    maxFiles: 1, // up tối đa 4 file
+    uploadDir: folderPath, // ghép nối đường dẫn // đường dẫn trỏ tới thư mục lưu uploads/videos/idVideo - lưu file tại đây
+    maxFiles: 1, // up tối đa 1 file
     maxFileSize: 50 * 1024 * 1024, // 50MB
     filter: function ({ name, originalFilename, mimetype }) {
       const valid = name === "video" && Boolean(mimetype?.includes("mp4") || mimetype?.includes("quicktime"))
       if (!valid) {
         form.emit("error" as any, new Error("File type is not valid") as any)
       }
-      return true
+      return valid
+    },
+    filename: function () {
+      return idName
     }
   })
   // tạo promise và trả về để services có thể dùng async await bắt promise trả kết quả
@@ -80,6 +97,7 @@ export const handleUploadVideo = async (req: Request) => {
         const ext = getExtension(video.originalFilename as string)
         fs.renameSync(video.filepath, video.filepath + "." + ext)
         video.newFilename = video.newFilename + "." + ext
+        video.filepath = video.filepath + "." + ext
       })
       resolve(files.video as File[])
     })

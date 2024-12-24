@@ -74,5 +74,6 @@ export const userMessages = {
   OLD_PASSWORD_NOT_MATCH: "Old password is not match",
   CHANGE_PASSWORD_SUCCESS: "Change password is success",
 
-  EMAIL_NOT_VERIFIED: "Email not verified"
+  EMAIL_NOT_VERIFIED: "Email not verified",
+  REFRESH_TOKEN_IS_SUCCESS: "Refresh token is success"
 } as const
