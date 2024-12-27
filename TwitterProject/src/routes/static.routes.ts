@@ -12,8 +12,10 @@ const staticRouter = Router()
 
 staticRouter.get("/image/:name", wrapRequestHandler(serveImageController))
 
+// vẫn là kiểu stream truyền thống nhưng được chia nhỏ video ra và load dần
 staticRouter.get("/video-stream/:name", wrapRequestHandler(serveVideoStreamController))
 
+// stream HLS
 staticRouter.get("/video-hls/:id/master.m3u8", wrapRequestHandler(serveM3u8Controller))
 
 staticRouter.get("/video-hls/:id/:v/:segment", wrapRequestHandler(serveSegmentController))

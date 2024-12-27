@@ -75,5 +75,7 @@ export const userMessages = {
   CHANGE_PASSWORD_SUCCESS: "Change password is success",
 
   EMAIL_NOT_VERIFIED: "Email not verified",
-  REFRESH_TOKEN_IS_SUCCESS: "Refresh token is success"
+  REFRESH_TOKEN_IS_SUCCESS: "Refresh token is success",
+  UPLOAD_SUCCESS: "Upload success",
+  GET_VIDEO_STATUS_SUCCESS: "Get video status success"
 } as const

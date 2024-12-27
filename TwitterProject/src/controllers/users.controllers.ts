@@ -1,4 +1,4 @@
-import e, { NextFunction, Request, Response } from "express"
+import { NextFunction, Request, Response } from "express"
 import userService from "~/services/user.services"
 import { ParamsDictionary } from "express-serve-static-core"
 import {

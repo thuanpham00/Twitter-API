@@ -8,6 +8,7 @@ import { config } from "dotenv"
 import { upload_image_dir, upload_video_dir } from "./constants/dir"
 import staticRouter from "./routes/static.routes"
 import cors from "cors"
+import { MongoClient } from "mongodb"
 config()
 
 const app = express()
@@ -34,3 +35,27 @@ app.listen(port, () => {
 // nó ưu tiên chạy các middleware trước
 // rồi mới chạy định tuyến route
 // vào route - chạy vào `middleware` để xủ lý "test" các yêu cầu input // nếu không thoa man thì báo lỗi or nếu không lỗi thì next() -> rồi mới chạy `controller` nơi xử lý logic của route -> rồi vào service để xử lý các method của db -> rồi quay về controller trả ra kết quả
+
+// const mongoClient = new MongoClient(
+//   `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@twitter-api.a6fgn.mongodb.net/?retryWrites=true&w=majority&appName=twitter-api`
+// )
+
+// const db = mongoClient.db("earth")
+
+// const users = db.collection("users")
+
+// const userData = []
+
+// function getRandomNumber() {
+//   return Math.floor(Math.random() * 100) + 1
+// }
+
+// for (let i = 0; i < 1000; i++) {
+//   userData.push({
+//     name: "user" + (i + 1),
+//     age: getRandomNumber(),
+//     sex: i % 2 === 0 ? "Male" : "Female"
+//   })
+// }
+
+// users.insertMany(userData)

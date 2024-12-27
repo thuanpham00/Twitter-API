@@ -46,6 +46,7 @@ export const handleUploadImage = async (req: Request) => {
       if (!Boolean(files.image)) {
         return reject(new Error("File is empty"))
       }
+      console.log(files)
       resolve(files.image as File[])
     })
   })
@@ -79,7 +80,7 @@ export const handleUploadVideo = async (req: Request) => {
       return valid
     },
     filename: function () {
-      return idName
+      return idName // đặt tên file giống folder // tạo thư mục uploads/videos/idVideo/idVideo.mp4
     }
   })
   // tạo promise và trả về để services có thể dùng async await bắt promise trả kết quả

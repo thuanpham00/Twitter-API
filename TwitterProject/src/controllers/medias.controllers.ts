@@ -4,12 +4,13 @@ import { upload_image_dir, upload_video_dir } from "~/constants/dir"
 import httpStatus from "~/constants/httpStatus"
 import mediaServices from "~/services/media.services"
 import fs from "fs"
+import { userMessages } from "~/constants/message"
 
 // chỉ mới dùng lại upload thôi chưa lưu DB
 export const uploadImageController = async (req: Request, res: Response) => {
   const result = await mediaServices.uploadImage(req)
   return res.json({
-    message: "Upload Success",
+    message: userMessages.UPLOAD_SUCCESS,
     result: result
   })
 }
@@ -17,7 +18,7 @@ export const uploadImageController = async (req: Request, res: Response) => {
 export const uploadVideoController = async (req: Request, res: Response) => {
   const result = await mediaServices.uploadVideo(req)
   return res.json({
-    message: "Upload Success",
+    message: userMessages.UPLOAD_SUCCESS,
     result: result
   })
 }
@@ -25,7 +26,16 @@ export const uploadVideoController = async (req: Request, res: Response) => {
 export const uploadVideoHLSController = async (req: Request, res: Response) => {
   const result = await mediaServices.uploadVideoHLS(req)
   return res.json({
-    message: "Upload Success",
+    message: userMessages.UPLOAD_SUCCESS,
+    result: result
+  })
+}
+
+export const videoStatusController = async (req: Request, res: Response) => {
+  const { id } = req.params
+  const result = await mediaServices.getVideoStatus(id as string)
+  return res.json({
+    message: userMessages.GET_VIDEO_STATUS_SUCCESS,
     result: result
   })
 }
