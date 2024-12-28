@@ -21,8 +21,12 @@ app.use("/medias", mediaRouter)
 app.use("/static", staticRouter)
 app.use("/static/video", express.static(upload_video_dir))
 
-databaseService.connect()
-
+databaseService.connect().then(() => {
+  databaseService.indexUsers() // tạo index trong MongoDB
+  databaseService.indexRefreshToken()
+  databaseService.indexVideoStatus()
+  databaseService.indexFollow()
+})
 initFolder() // check và tạo folder
 
 // khi app lỗi nó sẽ nhảy vào middleware này
@@ -43,6 +47,29 @@ app.listen(port, () => {
 // const db = mongoClient.db("earth")
 
 // const users = db.collection("users")
+
+// async function addEmptyAddressField() {
+//   try {
+//     // Kết nối tới MongoDB
+//     await mongoClient.connect();
+//     console.log("Kết nối MongoDB thành công!");
+
+//     // Thêm trường 'address' với giá trị rỗng
+//     const result = await users.updateMany({}, { $set: { address: "No field" } });
+
+//     // Kết quả
+//     console.log(`Đã thêm trường 'address' với giá trị rỗng vào ${result.modifiedCount} document.`);
+//   } catch (err) {
+//     console.error("Lỗi khi cập nhật document:", err);
+//   } finally {
+//     // Đóng kết nối
+//     await mongoClient.close();
+//     console.log("Đã đóng kết nối MongoDB.");
+//   }
+// }
+
+// // Gọi hàm để thực thi
+// addEmptyAddressField();
 
 // const userData = []
 

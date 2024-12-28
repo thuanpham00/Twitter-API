@@ -29,6 +29,43 @@ class DatabaseService {
     }
   }
 
+  // các thuộc tính này trong collection có khả năng query (find) -> nên gắn index
+  async indexUsers() {
+    const exists = await this.users.indexExists(["email_1_password_1", "email_1", "username_1"])
+    if (!exists) {
+      this.users.createIndex({ email: 1, password: 1 })
+      this.users.createIndex({ email: 1 }, { unique: true })
+      this.users.createIndex({ username: 1 }, { unique: true })
+    }
+  }
+
+  async indexRefreshToken() {
+    const exists = await this.refreshTokens.indexExists(["token_1", "exp_1"])
+    if (!exists) {
+      this.refreshTokens.createIndex({ token: 1 })
+      this.refreshTokens.createIndex(
+        { exp: 1 },
+        {
+          expireAfterSeconds: 0 // expireAfterSeconds được sử dụng để tạo TTL (Time-To-Live) Index, cho phép tự động xóa các document sau một khoảng thời gian nhất định // xóa các token hết hạn
+        }
+      )
+    }
+  }
+
+  async indexVideoStatus() {
+    const exists = await this.videoStatus.indexExists(["name_1"])
+    if (!exists) {
+      this.videoStatus.createIndex({ name: 1 })
+    }
+  }
+
+  async indexFollow() {
+    const exists = await this.followers.indexExists(["user_id_1_follower_user_id_1"])
+    if (!exists) {
+      this.followers.createIndex({ user_id: 1, follower_user_id: 1 })
+    }
+  }
+
   // get: giúp truy cập thuộc tính và xử lý logic và khi truy cập giá trị thì không cần gọi hàm
   // thuộc tính được định nghĩa dưới dạng getter
   get users(): Collection<User> {
