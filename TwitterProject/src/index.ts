@@ -5,10 +5,13 @@ import { defaultErrorHandler } from "./middlewares/error.middlewares"
 import mediaRouter from "./routes/medias.routes"
 import { initFolder } from "./utils/file"
 import { config } from "dotenv"
-import { upload_image_dir, upload_video_dir } from "./constants/dir"
+import { upload_video_dir } from "./constants/dir"
 import staticRouter from "./routes/static.routes"
 import cors from "cors"
-import { MongoClient } from "mongodb"
+import tweetRouter from "./routes/tweets.routes"
+import bookmarkRoute from "./routes/bookmark.routes"
+import likeRoute from "./routes/like.routes"
+// import likeRoute from "./routes/like.routes"
 config()
 
 const app = express()
@@ -20,6 +23,9 @@ app.use("/users", userRouter)
 app.use("/medias", mediaRouter)
 app.use("/static", staticRouter)
 app.use("/static/video", express.static(upload_video_dir))
+app.use("/tweets", tweetRouter)
+app.use("/bookmarks", bookmarkRoute)
+app.use("/likes", likeRoute)
 
 databaseService.connect().then(() => {
   databaseService.indexUsers() // tạo index trong MongoDB
