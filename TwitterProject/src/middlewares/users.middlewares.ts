@@ -567,6 +567,24 @@ export const changePasswordValidator = validate(
   )
 )
 
+export const isUserLoggedInValidator = (middleware: (req: Request, res: Response, next: NextFunction) => void) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (req.headers.authorization) {
+      return middleware(req, res, next)
+    }
+    next() // nếu ko login thì bỏ qua
+  }
+}
+
 // 1 là viết middleware theo dạng request handler
 // 2 là viết check schema
 // nó đều là check input đầu vào trước khi tới controller
+
+// req.header vs req.headers
+// header: ko phân biệt chữ hoa chữ thường
+// headers: của Express có quy định chữ hoa chữ thường
+// console.log(req.header('authorization')) -> ok
+// console.log(req.header('Authorization')) -> ok
+
+// console.log(req.headers('authorization')) -> ok
+// console.log(req.headers('Authorization')) -> error

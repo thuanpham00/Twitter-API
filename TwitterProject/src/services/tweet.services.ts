@@ -32,7 +32,7 @@ class TweetServices {
         user_id: new ObjectId(user_id),
         audience: body.audience,
         content: body.content,
-        hashtags: hashtag, // chưa xử lý
+        hashtags: hashtag, // ít - nhiều -> nhúng
         mentions: body.mentions,
         medias: body.medias,
         parent_id: body.parent_id,

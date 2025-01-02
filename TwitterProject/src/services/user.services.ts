@@ -545,7 +545,8 @@ export default userService
 // nơi đây thực hiện các method logic xử lý db
 
 // updateOne (chỉ update, ko trả về document)
-// findOneAndUpdate (update, và trả về document)
+// findOneAndUpdate (update, và trả về document - tìm và cập nhật)
+// findOneAndDelete (tìm và xóa)
 // insertOne (trả về document)
 // findOne (trả về document)
 // deleteOne

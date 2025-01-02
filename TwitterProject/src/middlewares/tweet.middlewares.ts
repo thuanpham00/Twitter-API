@@ -1,9 +1,14 @@
-import { checkSchema } from "express-validator"
-import { includes } from "lodash"
+import { NextFunction, Request, Response } from "express"
+import { checkSchema, ParamSchema } from "express-validator"
 import { ObjectId } from "mongodb"
-import { MediaType, TweetAudience, TweetType } from "~/constants/enum"
-import { tweetMessages } from "~/constants/message"
+import { MediaType, TweetAudience, TweetType, UserVerifyStatus } from "~/constants/enum"
+import httpStatus from "~/constants/httpStatus"
+import { tweetMessages, userMessages } from "~/constants/message"
+import { ErrorWithStatus } from "~/models/Errors"
+import Tweet from "~/models/schemas/Tweet.schema"
+import databaseService from "~/services/database.services"
 import { convertEnumArray } from "~/utils/commons"
+import { wrapRequestHandler } from "~/utils/handlers"
 import { validate } from "~/utils/validations"
 
 const tweetType = convertEnumArray(TweetType)
@@ -33,7 +38,7 @@ export const createTweetValidator = validate(
             const hashtags = req.body.hashtags as string[]
             const mentions = req.body.mentions as string[]
             // Nếu `type` là retweet thì `content` phải là `''`
-            if ([TweetType.Retweet].includes(type) && value !== null) {
+            if ([TweetType.Retweet].includes(type) && value !== "") {
               throw new Error(tweetMessages.CONTENT_MUST_BE_EMPTY_STRING) // lỗi 422
             }
             // Nếu `type` là comment, quotetweet, tweet và không có `mentions` và `hashtags` thì `content` phải là string và không được rỗng
@@ -112,3 +117,68 @@ export const createTweetValidator = validate(
     ["body"]
   )
 )
+
+export const tweetIdValidator = validate(
+  checkSchema(
+    {
+      tweet_id: {
+        custom: {
+          options: async (value, { req }) => {
+            if (!ObjectId.isValid(value)) {
+              throw new ErrorWithStatus({
+                status: httpStatus.UNAUTHORIZED,
+                message: tweetMessages.INVALID_TWEET_ID
+              })
+            }
+            const findTweet = await databaseService.tweets.findOne({ _id: new ObjectId(value) })
+            if (findTweet === null) {
+              throw new ErrorWithStatus({
+                status: httpStatus.NOTFOUND,
+                message: tweetMessages.TWEET_NOT_FOUND
+              })
+            }
+            req.tweet = findTweet
+          }
+        }
+      }
+    },
+    ["body", "params"]
+  )
+)
+
+// muốn sử dụng async/await trong handler express thì phải có try catch
+// nếu ko dùng try catch thì phải dùng wrapRequestHandler
+export const audienceValidator = wrapRequestHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const tweet = req.tweet as Tweet
+  if ((tweet.audience = TweetAudience.TwitterCircle)) {
+    // kiểm tra người xem tweet này đã đăng nhập hay chưa
+    if (!req.decode_authorization) {
+      throw new ErrorWithStatus({
+        status: httpStatus.UNAUTHORIZED,
+        message: userMessages.ACCESS_TOKEN_IS_REQUIRED
+      })
+    }
+
+    // kiểm tra tk tác giả có ổn (bị khóa hay bị xóa chưa)
+    const author = await databaseService.users.findOne({ _id: new ObjectId(tweet.user_id) })
+    if (!author || author.verify === UserVerifyStatus.Banned) {
+      throw new ErrorWithStatus({
+        status: httpStatus.NOTFOUND,
+        message: userMessages.USER_NOT_FOUND
+      })
+    }
+
+    const { user_id } = req.decode_authorization
+    // kiểm tra người xem tweet có nằm trong Twitter Circle của tác giả không
+    const isInTwitterCircle = author.twitter_circle.some((user_circle_id) => user_circle_id.equals(user_id))
+
+    // nếu bn không phải tác giả và không nằm trong twitter circle thì lỗi
+    if (!author._id.equals(user_id) && !isInTwitterCircle) {
+      throw new ErrorWithStatus({
+        status: httpStatus.FORBIDDEN,
+        message: tweetMessages.TWEET_IS_NOT_PUBLIC
+      })
+    }
+  }
+  next()
+})

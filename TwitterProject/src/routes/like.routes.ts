@@ -1,6 +1,6 @@
 import { Router } from "express"
 import { likeTweetController, unLikeTweetController } from "~/controllers/likes.controllers"
-import { likeValidator, unLikeValidator } from "~/middlewares/like.middlewares"
+import { tweetIdValidator } from "~/middlewares/tweet.middlewares"
 import { accessTokenValidator, verifiedUserValidator } from "~/middlewares/users.middlewares"
 import { wrapRequestHandler } from "~/utils/handlers"
 
@@ -13,7 +13,13 @@ const likeRoute = Router()
  * Header: {Authorization: Bearer <access_token>}
  * Body: {tweet_id: string}
  */
-likeRoute.post("/", accessTokenValidator, verifiedUserValidator, likeValidator, wrapRequestHandler(likeTweetController))
+likeRoute.post(
+  "/",
+  accessTokenValidator,
+  verifiedUserValidator,
+  tweetIdValidator,
+  wrapRequestHandler(likeTweetController)
+)
 
 /**
  * Description: unLikeRoute Tweet
@@ -25,7 +31,7 @@ likeRoute.delete(
   "/tweets/:tweet_id",
   accessTokenValidator,
   verifiedUserValidator,
-  unLikeValidator,
+  tweetIdValidator,
   wrapRequestHandler(unLikeTweetController)
 )
 
