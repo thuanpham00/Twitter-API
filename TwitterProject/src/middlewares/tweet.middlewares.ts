@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express"
-import { checkSchema, ParamSchema } from "express-validator"
+import { checkSchema } from "express-validator"
 import { ObjectId } from "mongodb"
 import { MediaType, TweetAudience, TweetType, UserVerifyStatus } from "~/constants/enum"
 import httpStatus from "~/constants/httpStatus"
@@ -130,14 +130,127 @@ export const tweetIdValidator = validate(
                 message: tweetMessages.INVALID_TWEET_ID
               })
             }
-            const findTweet = await databaseService.tweets.findOne({ _id: new ObjectId(value) })
-            if (findTweet === null) {
+            // thực hiện query kết hợp tìm ở đây để lấy được tweet
+            const findTweet = (
+              await databaseService.tweets
+                .aggregate<Tweet>([
+                  {
+                    $match: {
+                      _id: new ObjectId(value)
+                    }
+                  },
+                  {
+                    $lookup: {
+                      from: "hashtags",
+                      localField: "hashtags",
+                      foreignField: "_id",
+                      as: "hashtags"
+                    }
+                  },
+                  {
+                    $lookup: {
+                      from: "users",
+                      localField: "mentions",
+                      foreignField: "_id",
+                      as: "mentions"
+                    }
+                  },
+                  {
+                    $addFields: {
+                      mentions: {
+                        $map: {
+                          input: "$mentions",
+                          as: "mention",
+                          in: {
+                            _id: "$$mention._id",
+                            name: "$$mention.name"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    $lookup: {
+                      from: "bookmarks",
+                      localField: "_id",
+                      foreignField: "tweet_id",
+                      as: "bookmarks"
+                    }
+                  },
+                  {
+                    $lookup: {
+                      from: "likes",
+                      localField: "_id",
+                      foreignField: "tweet_id",
+                      as: "likes"
+                    }
+                  },
+                  {
+                    $lookup: {
+                      from: "tweets",
+                      localField: "_id",
+                      foreignField: "parent_id",
+                      as: "tweet_children"
+                    }
+                  },
+                  {
+                    $addFields: {
+                      bookmarks: {
+                        $size: "$bookmarks"
+                      },
+                      likes: {
+                        $size: "$likes"
+                      },
+                      retreet_count: {
+                        $size: {
+                          $filter: {
+                            input: "$tweet_children",
+                            as: "item",
+                            cond: {
+                              $eq: ["$$item.type", TweetType.Retweet]
+                            }
+                          }
+                        }
+                      },
+                      comment_count: {
+                        $size: {
+                          $filter: {
+                            input: "$tweet_children",
+                            as: "item",
+                            cond: {
+                              $eq: ["$$item.type", TweetType.Comment]
+                            }
+                          }
+                        }
+                      },
+                      quote_count: {
+                        $size: {
+                          $filter: {
+                            input: "$tweet_children",
+                            as: "item",
+                            cond: {
+                              $eq: ["$$item.type", TweetType.QuoteTweet]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    $project: {
+                      tweet_children: 0
+                    }
+                  }
+                ])
+                .toArray()
+            )[0]
+            if (!findTweet) {
               throw new ErrorWithStatus({
                 status: httpStatus.NOTFOUND,
                 message: tweetMessages.TWEET_NOT_FOUND
               })
             }
-            req.tweet = findTweet
+            ;(req as Request).tweet = findTweet
           }
         }
       }
@@ -150,7 +263,7 @@ export const tweetIdValidator = validate(
 // nếu ko dùng try catch thì phải dùng wrapRequestHandler
 export const audienceValidator = wrapRequestHandler(async (req: Request, res: Response, next: NextFunction) => {
   const tweet = req.tweet as Tweet
-  if ((tweet.audience = TweetAudience.TwitterCircle)) {
+  if (tweet.audience === TweetAudience.TwitterCircle) {
     // kiểm tra người xem tweet này đã đăng nhập hay chưa
     if (!req.decode_authorization) {
       throw new ErrorWithStatus({
@@ -159,7 +272,7 @@ export const audienceValidator = wrapRequestHandler(async (req: Request, res: Re
       })
     }
 
-    // kiểm tra tk tác giả có ổn (bị khóa hay bị xóa chưa)
+    // kiểm tra tk tác giả có ổn (bị khóa hay bị xóa chưa) không
     const author = await databaseService.users.findOne({ _id: new ObjectId(tweet.user_id) })
     if (!author || author.verify === UserVerifyStatus.Banned) {
       throw new ErrorWithStatus({
@@ -182,3 +295,47 @@ export const audienceValidator = wrapRequestHandler(async (req: Request, res: Re
   }
   next()
 })
+
+export const getTweetChildrenValidator = validate(
+  checkSchema(
+    {
+      tweet_type: {
+        isIn: {
+          options: [tweetType],
+          errorMessage: tweetMessages.TWEET_INVALID_TYPE
+        }
+      },
+      limit: {
+        isNumeric: true,
+        custom: {
+          options: (value) => {
+            const number = Number(value)
+            if (number > 100 || number < 1) {
+              throw new ErrorWithStatus({
+                status: httpStatus.UNAUTHORIZED,
+                message: "Limit <= 100 && limit >= 1"
+              })
+            }
+            return true // nhớ nếu ko có lỗi thì return true
+          }
+        }
+      },
+      page: {
+        isNumeric: true,
+        custom: {
+          options: (value) => {
+            const number = Number(value)
+            if (number < 1) {
+              throw new ErrorWithStatus({
+                status: httpStatus.UNAUTHORIZED,
+                message: "Page >= 1"
+              })
+            }
+            return true
+          }
+        }
+      }
+    },
+    ["query"]
+  )
+)

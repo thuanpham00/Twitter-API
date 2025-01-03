@@ -550,3 +550,6 @@ export default userService
 // insertOne (trả về document)
 // findOne (trả về document)
 // deleteOne
+
+// promise: là 1 cơ chế bất đồng bộ, thường dùng xử lý gọi api, đọc/ghi file, các tác vụ tốn thời gian
+// async/await không làm thay đổi bản chất bất đồng bộ, nhưng nó giúp viết code trông đồng bộ hơn, khiến việc xử lý logic dễ hiểu hơn.

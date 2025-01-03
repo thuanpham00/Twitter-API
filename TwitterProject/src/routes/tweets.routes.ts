@@ -1,6 +1,6 @@
 import { Router } from "express"
-import { createTweetController, getTweetController } from "~/controllers/tweets.controllers"
-import { audienceValidator, createTweetValidator, tweetIdValidator } from "~/middlewares/tweet.middlewares"
+import { createTweetController, getTweetChildrenController, getTweetController } from "~/controllers/tweets.controllers"
+import { audienceValidator, createTweetValidator, getTweetChildrenValidator, tweetIdValidator } from "~/middlewares/tweet.middlewares"
 import { accessTokenValidator, isUserLoggedInValidator, verifiedUserValidator } from "~/middlewares/users.middlewares"
 import { wrapRequestHandler } from "~/utils/handlers"
 
@@ -36,6 +36,24 @@ tweetRouter.get(
   isUserLoggedInValidator(verifiedUserValidator), // nếu user có login thì check Verify, còn nếu không login thì bỏ qua
   audienceValidator,
   wrapRequestHandler(getTweetController)
+)
+
+/**
+ * Description: get tweet children
+ * Path: /
+ * Method: GET
+ * Header: {Authorization: Bearer <access_token>}
+ * Params: {limit: number, skip: number, tweet_type: TweetType}
+ */
+
+tweetRouter.get(
+  "/:tweet_id/children",
+  tweetIdValidator,
+  getTweetChildrenValidator,
+  isUserLoggedInValidator(accessTokenValidator),
+  isUserLoggedInValidator(verifiedUserValidator),
+  audienceValidator,
+  wrapRequestHandler(getTweetChildrenController)
 )
 
 export default tweetRouter
