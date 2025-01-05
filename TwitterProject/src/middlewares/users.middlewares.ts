@@ -567,14 +567,15 @@ export const changePasswordValidator = validate(
   )
 )
 
-export const isUserLoggedInValidator = (middleware: (req: Request, res: Response, next: NextFunction) => void) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+// currying function
+export const isUserLoggedInValidator =
+  (middleware: (req: Request, res: Response, next: NextFunction) => void) =>
+  (req: Request, res: Response, next: NextFunction) => {
     if (req.headers.authorization) {
       return middleware(req, res, next)
     }
     next() // nếu ko login thì bỏ qua
   }
-}
 
 // 1 là viết middleware theo dạng request handler
 // 2 là viết check schema

@@ -551,5 +551,8 @@ export default userService
 // findOne (trả về document)
 // deleteOne
 
+// Tìm, thêm, xóa, sửa -> thực hiện bình thường
+// còn khi nào mà get query phức tạp lấy nhiều thông tin (nối bảng lại - tham chiếu) -> dùng Aggregation
+
 // promise: là 1 cơ chế bất đồng bộ, thường dùng xử lý gọi api, đọc/ghi file, các tác vụ tốn thời gian
 // async/await không làm thay đổi bản chất bất đồng bộ, nhưng nó giúp viết code trông đồng bộ hơn, khiến việc xử lý logic dễ hiểu hơn.

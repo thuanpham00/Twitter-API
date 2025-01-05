@@ -11,7 +11,9 @@ import cors from "cors"
 import tweetRouter from "./routes/tweets.routes"
 import bookmarkRoute from "./routes/bookmark.routes"
 import likeRoute from "./routes/like.routes"
-// import likeRoute from "./routes/like.routes"
+import { searchRoute } from "./routes/search.routes"
+
+// import "~/utils/fake"
 config()
 
 const app = express()
@@ -23,15 +25,17 @@ app.use("/users", userRouter)
 app.use("/medias", mediaRouter)
 app.use("/static", staticRouter)
 app.use("/static/video", express.static(upload_video_dir))
-app.use("/tweets", tweetRouter)
 app.use("/bookmarks", bookmarkRoute)
 app.use("/likes", likeRoute)
+app.use("/tweets", tweetRouter)
+app.use("/search", searchRoute)
 
 databaseService.connect().then(() => {
   databaseService.indexUsers() // tạo index trong MongoDB
   databaseService.indexRefreshToken()
   databaseService.indexVideoStatus()
   databaseService.indexFollow()
+  databaseService.indexTweet()
 })
 initFolder() // check và tạo folder
 

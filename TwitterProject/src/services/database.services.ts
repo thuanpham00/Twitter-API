@@ -70,6 +70,13 @@ class DatabaseService {
     }
   }
 
+  async indexTweet() {
+    const exists = await this.tweets.indexExists(["content_text"])
+    if (!exists) {
+      this.tweets.createIndex({ content: "text" }, { default_language: "none" })
+    }
+  }
+
   // get: giúp truy cập thuộc tính và xử lý logic và khi truy cập giá trị thì không cần gọi hàm
   // thuộc tính được định nghĩa dưới dạng getter
   get users(): Collection<User> {
