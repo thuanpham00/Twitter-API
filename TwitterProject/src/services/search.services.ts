@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb"
 import databaseService from "./database.services"
-import { MediaQueryType, MediaType, TweetType } from "~/constants/enum"
+import { MediaQueryType, MediaType, PeopleFollow, TweetType } from "~/constants/enum"
 
 class SearchServices {
   async search({
@@ -15,7 +15,7 @@ class SearchServices {
     limit: number
     page: number
     media_type?: MediaQueryType
-    people_follow?: string
+    people_follow?: PeopleFollow
     user_id: string
   }) {
     const $match: any = {
@@ -49,7 +49,7 @@ class SearchServices {
         }
      */
     // lọc tìm kiếm tweet theo những người mà user đang theo dõi
-    if (people_follow && people_follow === "1") {
+    if (people_follow && people_follow === PeopleFollow.Following) {
       // ds những ng mà user đang theo dõi
       const follower_user_id_list = await databaseService.followers
         .find(

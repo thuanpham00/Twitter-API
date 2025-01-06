@@ -1,5 +1,6 @@
 import { Request, Response } from "express"
 import { ParamsDictionary } from "express-serve-static-core"
+import { PeopleFollow } from "~/constants/enum"
 import { SearchQuery } from "~/models/requests/Search.requests"
 import { TokenPayload } from "~/models/requests/User.requests"
 import searchServices from "~/services/search.services"
