@@ -123,7 +123,7 @@ export const resendVerifyEmailController = async (req: Request, res: Response) =
       message: userMessages.EMAIL_VERIFY_ALREADY_BEFORE
     })
   }
-  const result = await userService.resendVerifyEmail(user_id.toString())
+  const result = await userService.resendVerifyEmail(user_id.toString(), user.email)
   return res.json({
     message: result.message
   })
@@ -138,7 +138,8 @@ export const forgotPasswordController = async (
   const verify = user?.verify as UserVerifyStatus
   const result = await userService.forgotPassword({
     user_id: (user_id as ObjectId)?.toString(),
-    verify: verify
+    verify: verify,
+    email: user?.email as string
   }) // giống loginController
 
   return res.json({

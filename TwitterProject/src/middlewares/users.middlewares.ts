@@ -330,6 +330,7 @@ export const emailVerifyTokenValidator = validate(
                 secretOrPublicKey: process.env.JWT_VERIFY_EMAIL_SECRET as string
               })
               ;(req as Request).decode_email_verify_token = decode_email_verify_token
+              console.log(decode_email_verify_token)
             } catch (error) {
               if (error instanceof JsonWebTokenError) {
                 throw new ErrorWithStatus({

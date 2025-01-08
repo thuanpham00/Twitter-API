@@ -1,6 +1,6 @@
 import User from "~/models/schemas/User.schema"
 import databaseService from "./database.services"
-import { RegisterReqBody, TokenPayload, UpdateMeReqBody } from "~/models/requests/User.requests"
+import { RegisterReqBody, UpdateMeReqBody } from "~/models/requests/User.requests"
 import { hashPassword } from "~/utils/scripto"
 import { signToken, verifyToken } from "~/utils/jwt"
 import { TokenType, UserVerifyStatus } from "~/constants/enum"
@@ -12,6 +12,7 @@ import { ErrorWithStatus } from "~/models/Errors"
 import httpStatus from "~/constants/httpStatus"
 import Followers from "~/models/schemas/Followers.schema"
 import axios from "axios"
+import { sendForgotPasswordEmail, sendVerifyRegisterEmail } from "~/utils/email"
 config()
 class UserService {
   // các phương thức (method)
@@ -121,7 +122,7 @@ class UserService {
     await databaseService.refreshTokens.insertOne(
       new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token, iat: iat, exp: exp })
     )
-    // console.log("email-verify-token: ", emailVerifyToken)
+    await sendVerifyRegisterEmail(payload.email, emailVerifyToken)
     return { access_token, refresh_token }
   }
 
@@ -279,7 +280,7 @@ class UserService {
     await databaseService.refreshTokens.insertOne(
       new RefreshToken({
         user_id: new ObjectId(user_id),
-        token: new_refresh_token, 
+        token: new_refresh_token,
         iat: decode_refresh_token.iat,
         exp: decode_refresh_token.exp // vẫn giữ exp của RT cũ
       })
@@ -294,18 +295,6 @@ class UserService {
     // tạo giá trị cập nhật
     // mongoDB cập nhật giá trị
 
-    // await databaseService.users.updateOne(
-    //   {
-    //     _id: new ObjectId(user_id) // dò tìm theo id và set giá trị nhanh hơn
-    //   },
-    //   {
-    //     $set: {
-    //       email_verify_token: "",
-    //       updated_at: new Date()
-    //     }
-    //   }
-    // )
-    // const [access_token, refresh_token] = await this.signAccessAndRefreshToken(user_id.toString())
     const [token] = await Promise.all([
       this.signAccessAndRefreshToken({
         user_id: user_id.toString(),
@@ -337,6 +326,7 @@ class UserService {
         exp: decode_refresh_token.exp
       })
     )
+
     return {
       access_token,
       refresh_token
@@ -344,13 +334,12 @@ class UserService {
   }
 
   // reset lại email-verify-token
-  async resendVerifyEmail(user_id: string) {
+  async resendVerifyEmail(user_id: string, email: string) {
     const email_verify_token = await this.signEmailVerify({
       user_id: user_id.toString(),
       verify: UserVerifyStatus.Unverified
     })
     console.log("Gửi email: ", email_verify_token)
-
     await databaseService.users.updateOne(
       {
         _id: new ObjectId(user_id)
@@ -365,12 +354,14 @@ class UserService {
       }
     )
 
+    await sendVerifyRegisterEmail(email, email_verify_token)
+
     return {
       message: userMessages.RESEND_EMAIL_VERIFY_SUCCESS
     }
   }
 
-  async forgotPassword({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
+  async forgotPassword({ user_id, verify, email }: { user_id: string; verify: UserVerifyStatus; email: string }) {
     const forgot_password_token = await this.signForgotPassword({
       user_id: user_id.toString(),
       verify: verify
@@ -390,8 +381,8 @@ class UserService {
       }
     )
 
-    // gửi email kèm đường link đến email người dùng: https://twitter/forgot-password?token=token
-    console.log("forgot-password: ", forgot_password_token)
+    // gửi email kèm đường link đến email người dùng: https://twitter/reset-password?token=token
+    await sendForgotPasswordEmail(email, forgot_password_token)
     return {
       message: userMessages.CHECK_EMAIL_TO_RESET_PASSWORD
     }
@@ -556,3 +547,5 @@ export default userService
 
 // promise: là 1 cơ chế bất đồng bộ, thường dùng xử lý gọi api, đọc/ghi file, các tác vụ tốn thời gian
 // async/await không làm thay đổi bản chất bất đồng bộ, nhưng nó giúp viết code trông đồng bộ hơn, khiến việc xử lý logic dễ hiểu hơn.
+
+// 4 method register, login, loginGoogle, verifyEmail là trả về cặp AT và RT, và lưu RT
