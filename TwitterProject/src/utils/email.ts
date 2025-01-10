@@ -58,7 +58,7 @@ const sendVerifyEmail = (toAddress: string, subject: string, body: string) => {
     fromAddress: process.env.SES_FROM_ADDRESS as string,
     toAddresses: toAddress,
     body,
-    subject
+    subject 
   })
 
   return sesClient.send(sendEmailCommand)

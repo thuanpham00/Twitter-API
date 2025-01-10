@@ -12,8 +12,9 @@ export const defaultErrorHandler = (err: any, req: Request, res: Response, next:
     Object.getOwnPropertyNames(err).forEach((key) => {
       if (
         !Object.getOwnPropertyDescriptor(err, key)?.configurable ||
-        !Object.getOwnPropertyDescriptor(err, key)?.writable
+        !Object.getOwnPropertyDescriptor(err, key)?.writable 
       ) {
+        // trường hợp có thể lỗi do inActive key từ aws
         return
       }
       finalError[key] = err[key]

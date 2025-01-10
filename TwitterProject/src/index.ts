@@ -12,7 +12,7 @@ import tweetRouter from "./routes/tweets.routes"
 import bookmarkRoute from "./routes/bookmark.routes"
 import likeRoute from "./routes/like.routes"
 import { searchRoute } from "./routes/search.routes"
-
+import "~/utils/s3"
 // import "~/utils/fake"
 config()
 

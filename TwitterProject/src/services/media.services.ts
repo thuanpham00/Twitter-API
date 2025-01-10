@@ -10,6 +10,8 @@ import { Media } from "~/constants/others"
 import { encodeHLSWithMultipleVideoStreams } from "~/utils/video"
 import databaseService from "./database.services"
 import VideoStatus from "~/models/schemas/VideoStatus.schema"
+import { uploadFileToS3 } from "~/utils/s3"
+import { CompleteMultipartUploadCommandOutput } from "@aws-sdk/client-s3"
 
 class Queue {
   items: string[]
@@ -101,18 +103,31 @@ class MediaServices {
       // chuyển hình ảnh sang đuôi .jpeg (nhẹ hơn nhiều so với đuôi .png)
       files.map(async (file) => {
         const newName = getNameImage(file.newFilename)
-        const newPath = path.resolve(upload_image_dir, `${newName}.jpg`)
+        const newFullFileName = `${newName}.jpg`
+        const newPath = path.resolve(upload_image_dir, newFullFileName)
         sharp.cache(false)
         await sharp(file.filepath).jpeg().toFile(newPath)
+        const mime = (await import("mime")).default
+        const s3Result = await uploadFileToS3({
+          fileName: "image/" + newFullFileName,
+          filePath: newPath,
+          ContentType: mime.getType(newPath) as string
+        })
         fs.unlinkSync(file.filepath) // xóa file ảnh tạm
+        fs.unlinkSync(newPath) // xóa file ảnh vì lưu ảnh trên S3
         // kiểm tra nếu dự án đang chạy trên môi trường production thì trả về URL domain còn môi trường dev (local) thì về localhost
         // trả về đường dẫn url hiển thị hình còn lưu trữ thì vẫn là uploads/...
+
         return {
-          url: isProduction
-            ? `${process.env.HOST}/static/image/${newName}.jpg`
-            : `http://localhost:4000/static/image/${newName}.jpg`,
+          url: (s3Result as CompleteMultipartUploadCommandOutput).Location as string,
           type: MediaType.Image
         }
+        // return {
+        //   url: isProduction
+        //     ? `${process.env.HOST}/static/image/${newFullFileName}`
+        //     : `http://localhost:4000/static/image/${newFullFileName}`,
+        //   type: MediaType.Image
+        // }
       })
     )
     return result
@@ -120,13 +135,28 @@ class MediaServices {
 
   async uploadVideo(req: Request) {
     const files = await handleUploadVideo(req)
-    const { newFilename } = files[0]
-    return {
-      url: isProduction
-        ? `${process.env.HOST}/static/video/${newFilename}`
-        : `http://localhost:4000/static/video/${newFilename}`,
-      type: MediaType.Video
-    }
+    const result: Media[] = await Promise.all(
+      files.map(async (file) => {
+        const mime = (await import("mime")).default
+        const s3Result = await uploadFileToS3({
+          fileName: "video/" + file.newFilename,
+          filePath: file.filepath,
+          ContentType: mime.getType(file.filepath) as string
+        })
+        fs.unlinkSync(file.filepath) // xóa file video vì lưu ảnh trên S3
+        return {
+          url: (s3Result as CompleteMultipartUploadCommandOutput).Location as string,
+          type: MediaType.Video
+        }
+        // return {
+        //   url: isProduction
+        //     ? `${process.env.HOST}/static/video/${file.newFilename}`
+        //     : `http://localhost:4000/static/video/${file.newFilename}`,
+        //   type: MediaType.Video
+        // }
+      })
+    )
+    return result
   }
 
   async uploadVideoHLS(req: Request) {

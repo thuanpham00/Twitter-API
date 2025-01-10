@@ -1,16 +1,13 @@
 import fs from "fs"
 import { Request } from "express"
 import { File } from "formidable"
-import { upload_image_temp_dir, upload_video_dir, upload_video_temp_dir } from "~/constants/dir"
+import { upload_image_temp_dir, upload_video_dir } from "~/constants/dir"
 import path from "path"
 
 // khởi tạo folder nếu chưa có
 export const initFolder = () => {
-  if (!fs.existsSync(upload_image_temp_dir) || !fs.existsSync(upload_video_temp_dir)) {
+  if (!fs.existsSync(upload_image_temp_dir)) {
     fs.mkdirSync(upload_image_temp_dir, {
-      recursive: true // tạo folder nested
-    })
-    fs.mkdirSync(upload_video_temp_dir, {
       recursive: true // tạo folder nested
     })
   }
