@@ -5,6 +5,7 @@ import httpStatus from "~/constants/httpStatus"
 import mediaServices from "~/services/media.services"
 import fs from "fs"
 import { userMessages } from "~/constants/message"
+import { sendFileFromS3 } from "~/utils/s3"
 
 // chỉ mới dùng lại upload thôi chưa lưu DB
 export const uploadImageController = async (req: Request, res: Response) => {
@@ -51,21 +52,23 @@ export const serveImageController = async (req: Request, res: Response) => {
 
 export const serveM3u8Controller = async (req: Request, res: Response) => {
   const { id } = req.params
-  return res.sendFile(path.resolve(upload_video_dir, id, "master.m3u8"), (err) => {
-    if (err) {
-      res.status((err as any).status).send("Not found")
-    }
-  })
+  sendFileFromS3(res, `video-hls/${id}/master.m3u8`)
+  // return res.sendFile(path.resolve(upload_video_dir, id, "master.m3u8"), (err) => {
+  //   if (err) {
+  //     res.status((err as any).status).send("Not found")
+  //   }
+  // })
 }
 
 export const serveSegmentController = async (req: Request, res: Response) => {
   // segment: 0.ts , 1.ts, 2.ts
   const { id, v, segment } = req.params
-  return res.sendFile(path.resolve(upload_video_dir, id, v, segment), (err) => {
-    if (err) {
-      res.status((err as any).status).send("Not found")
-    }
-  })
+  sendFileFromS3(res, `video-hls/${id}/${v}/${segment}`)
+  // return res.sendFile(path.resolve(upload_video_dir, id, v, segment), (err) => {
+  //   if (err) {
+  //     res.status((err as any).status).send("Not found")
+  //   }
+  // })
 }
 
 export const serveVideoStreamController = async (req: Request, res: Response) => {

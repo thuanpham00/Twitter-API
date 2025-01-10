@@ -1,8 +1,9 @@
 import { S3 } from "@aws-sdk/client-s3"
 import { Upload } from "@aws-sdk/lib-storage"
 import { config } from "dotenv"
+import { Response } from "express"
 import fs from "fs"
-import path from "path"
+import httpStatus from "~/constants/httpStatus"
 config()
 
 const s3 = new S3({
@@ -42,6 +43,19 @@ export const uploadFileToS3 = ({
     leavePartsOnError: false
   })
   return parallelUploads3.done()
+}
+
+// mục đích là gọi file video hls từ s3 về server mình (server là trung gian)
+export const sendFileFromS3 = async (res: Response, filepath: string) => {
+  try {
+    const data = await s3.getObject({
+      Bucket: "twitter-clone-ap-southeash-1",
+      Key: filepath
+    })
+    ;(data.Body as any).pipe(res)
+  } catch (error) {
+    res.status(httpStatus.NOTFOUND).send("Not found")
+  }
 }
 
 // parallelUploads3.on("httpUploadProgress", (progress) => {
