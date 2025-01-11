@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction } from "express"
+import { Request, Response, NextFunction } from "express"
 import { omit } from "lodash"
 import httpStatus from "~/constants/httpStatus"
 import { ErrorWithStatus } from "~/models/Errors"
@@ -12,7 +12,7 @@ export const defaultErrorHandler = (err: any, req: Request, res: Response, next:
     Object.getOwnPropertyNames(err).forEach((key) => {
       if (
         !Object.getOwnPropertyDescriptor(err, key)?.configurable ||
-        !Object.getOwnPropertyDescriptor(err, key)?.writable 
+        !Object.getOwnPropertyDescriptor(err, key)?.writable
       ) {
         // trường hợp có thể lỗi do inActive key từ aws
         return
@@ -25,7 +25,7 @@ export const defaultErrorHandler = (err: any, req: Request, res: Response, next:
     })
   } catch (error) {
     res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
-      message: 'Internal server error',
+      message: "Internal server error",
       errorInfo: omit(error as any, ["stack"])
     })
   }
