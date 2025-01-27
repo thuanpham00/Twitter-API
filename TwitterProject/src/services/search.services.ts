@@ -46,7 +46,7 @@ class SearchServices {
               ObjectId('67790a6098f6b1fa563b5d84')
             ]
           }
-        }
+        }  
      */
     // lọc tìm kiếm tweet theo những người mà user đang theo dõi
     if (people_follow && people_follow === PeopleFollow.Following) {
