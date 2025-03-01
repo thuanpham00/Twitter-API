@@ -12,7 +12,7 @@ import databaseService from "./database.services"
 import VideoStatus from "~/models/schemas/VideoStatus.schema"
 import { uploadFileToS3 } from "~/utils/s3"
 import { CompleteMultipartUploadCommandOutput } from "@aws-sdk/client-s3"
-import { rimrafSync } from 'rimraf'
+import { rimrafSync } from "rimraf"
 class Queue {
   items: string[]
   encoding: boolean

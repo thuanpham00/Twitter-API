@@ -47,7 +47,7 @@ export const handleUploadImage = async (req: Request) => {
         return reject(new Error("File is empty"))
       }
       console.log(files)
-      resolve(files.image as File[])
+      resolve(files.image as File[])  
     })
   })
 }
