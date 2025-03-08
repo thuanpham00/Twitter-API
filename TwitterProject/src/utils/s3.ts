@@ -28,7 +28,7 @@ export const uploadFileToS3 = ({
   const parallelUploads3 = new Upload({
     client: s3,
     params: {
-      Bucket: "twitter-clone-ap-southeash-1",
+      Bucket: "twitter-clone-dev-ap-southeast-1",
       Key: fileName,
       Body: fs.readFileSync(filePath),
       ContentType: ContentType
