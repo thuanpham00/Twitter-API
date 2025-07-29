@@ -121,26 +121,26 @@ class MediaServices {
         sharp.cache(false)
         await sharp(file.filepath).jpeg().toFile(newPath)
         const mime = (await import("mime")).default
-        const s3Result = await uploadFileToS3({
-          fileName: "image/" + newFullFileName,
-          filePath: newPath,
-          ContentType: mime.getType(newPath) as string
-        })
-        fs.unlinkSync(file.filepath) // xóa file ảnh tạm
-        fs.unlinkSync(newPath) // xóa file ảnh vì lưu ảnh trên S3
+        // const s3Result = await uploadFileToS3({
+        //   fileName: "image/" + newFullFileName,
+        //   filePath: newPath,
+        //   ContentType: mime.getType(newPath) as string
+        // })
+        // fs.unlinkSync(file.filepath) // xóa file ảnh tạm
+        // fs.unlinkSync(newPath) // xóa file ảnh vì lưu ảnh trên S3
         // kiểm tra nếu dự án đang chạy trên môi trường production thì trả về URL domain còn môi trường dev (local) thì về localhost
         // trả về đường dẫn url hiển thị hình còn lưu trữ thì vẫn là uploads/...
 
-        return {
-          url: (s3Result as CompleteMultipartUploadCommandOutput).Location as string,
-          type: MediaType.Image
-        }
         // return {
-        //   url: isProduction
-        //     ? `${process.env.HOST}/static/image/${newFullFileName}`
-        //     : `http://localhost:4000/static/image/${newFullFileName}`,
+        //   url: (s3Result as CompleteMultipartUploadCommandOutput).Location as string,
         //   type: MediaType.Image
         // }
+        return {
+          url: isProduction
+            ? `${process.env.HOST}/static/image/${newFullFileName}`
+            : `http://localhost:4000/static/image/${newFullFileName}`,
+          type: MediaType.Image
+        }
       })
     )
     return result

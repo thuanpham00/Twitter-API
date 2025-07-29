@@ -1,6 +1,8 @@
 node_modules/
 dist/
 .env
+.env.development
+.env.production
 note.md
 Thiết kế schema Twitter theo MongoDB.md
 uploads/

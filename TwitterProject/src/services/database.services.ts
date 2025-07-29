@@ -8,8 +8,9 @@ import Tweet from "~/models/schemas/Tweet.schema"
 import HashTag from "~/models/schemas/HashTags.schema"
 import { BookmarkType } from "~/models/schemas/Bookmark.schema"
 import { LikeType } from "~/models/schemas/Like.schema"
-dotenv.config()
-
+// dotenv.config() // đọc file .env mặc định
+// dotenv.config({ path: '.env.production' })   // ✅ đọc file production
+dotenv.config({ path: ".env.development" }) // ✅ đọc file development
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@twitter-api.a6fgn.mongodb.net/?retryWrites=true&w=majority&appName=twitter-api`
 
 class DatabaseService {

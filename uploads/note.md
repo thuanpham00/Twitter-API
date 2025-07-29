@@ -1,0 +1,1 @@
+mapping folder trên máy thật và folder upload trong docker - đồng bộ

@@ -26,7 +26,7 @@ class UserService {
       // khi decode có thể lấy ra trạng thái user verify
       privateKey: process.env.JWT_ACCESS_TOKEN_SECRET as string,
       options: {
-        expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN
+        expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN ? parseInt(process.env.ACCESS_TOKEN_EXPIRES_IN) : undefined
       }
     })
   }
@@ -51,7 +51,7 @@ class UserService {
       },
       privateKey: process.env.JWT_REFRESH_TOKEN_SECRET as string,
       options: {
-        expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN
+        expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN ? parseInt(process.env.REFRESH_TOKEN_EXPIRES_IN) : undefined
       }
     })
   }
@@ -65,7 +65,7 @@ class UserService {
       },
       privateKey: process.env.JWT_VERIFY_EMAIL_SECRET as string,
       options: {
-        expiresIn: process.env.EMAIL_VERIFY_EXPIRES_IN
+        expiresIn: process.env.EMAIL_VERIFY_EXPIRES_IN ? parseInt(process.env.EMAIL_VERIFY_EXPIRES_IN) : undefined
       }
     })
   }
@@ -79,7 +79,7 @@ class UserService {
       },
       privateKey: process.env.JWT_FORGOT_PASSWORD_SECRET as string,
       options: {
-        expiresIn: process.env.FORGOT_PASSWORD_EXPIRES_IN
+        expiresIn: process.env.FORGOT_PASSWORD_EXPIRES_IN ? parseInt(process.env.FORGOT_PASSWORD_EXPIRES_IN) : undefined
       }
     })
   }
