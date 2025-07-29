@@ -12,14 +12,26 @@ import tweetRouter from "./routes/tweets.routes"
 import bookmarkRoute from "./routes/bookmark.routes"
 import likeRoute from "./routes/like.routes"
 import { searchRoute } from "./routes/search.routes"
+import { rateLimit } from "express-rate-limit"
 import "~/utils/s3"
 // import "~/utils/fake"
 config()
 
+// giới hạn số lượng request với rate limit
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes). // mỗi IP 100 request cho 15 phút
+  standardHeaders: "draft-8", // draft-6: `RateLimit-*` headers; draft-7 & draft-8: combined `RateLimit` header
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
+  ipv6Subnet: 56 // Set to 60 or 64 to be less aggressive, or 52 or 48 to be more aggressive
+  // store: ... , // Redis, Memcached, etc. See below.
+})
+
 const app = express()
 const port = 4000
-
+app.use(limiter)
 app.use(cors())
+
 app.use(express.json()) // chuyển json sang thành obj
 app.use("/users", userRouter)
 app.use("/medias", mediaRouter)

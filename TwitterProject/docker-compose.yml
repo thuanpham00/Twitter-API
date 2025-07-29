@@ -1,0 +1,8 @@
+version: '3'
+services:
+  twitter:
+    image: thuan/twitter:v0
+    ports:
+      - '3334:4000'
+    volumes:
+      - 'D:\VS_CODE\Project\Project-NodeJS\Twitter\uploads:/app/uploads'
