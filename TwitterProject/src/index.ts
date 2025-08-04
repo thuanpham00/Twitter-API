@@ -14,6 +14,11 @@ import likeRoute from "./routes/like.routes"
 import { searchRoute } from "./routes/search.routes"
 import { rateLimit } from "express-rate-limit"
 import "~/utils/s3"
+import { createServer } from "http"
+import { Server } from "socket.io"
+import Conversation from "./models/schemas/Conversation.schema"
+import { ObjectId } from "mongodb"
+import conversationRouter from "./routes/conversation.routes"
 // import "~/utils/fake"
 config()
 
@@ -28,6 +33,7 @@ const limiter = rateLimit({
 })
 
 const app = express()
+const httpServer = createServer(app)
 const port = 4000
 app.use(limiter)
 app.use(cors())
@@ -41,6 +47,7 @@ app.use("/bookmarks", bookmarkRoute)
 app.use("/likes", likeRoute)
 app.use("/tweets", tweetRouter)
 app.use("/search", searchRoute)
+app.use("/conversations", conversationRouter)
 
 databaseService.connect().then(() => {
   databaseService.indexUsers() // tạo index trong MongoDB
@@ -54,9 +61,60 @@ initFolder() // check và tạo folder
 // khi app lỗi nó sẽ nhảy vào middleware này
 app.use(defaultErrorHandler)
 
-app.listen(port, () => {
+// app.listen(port, () => {
+//   console.log(`Example app listening on port ${port}`)
+// })
+
+httpServer.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
 })
+
+const io = new Server(httpServer, {
+  cors: {
+    origin: "http://localhost:3000"
+  }
+}) // instance io
+
+// connection và disconnect là sự kiện mặc định ở server (Socket.IO)
+const users: {
+  [key: string]: {
+    socket_id: string
+  }
+} = {}
+
+io.on("connection", (socket) => {
+  console.log(`user ${socket.id} connected`)
+  const user_id = socket.handshake.auth.user_id // user_id người gửi
+  users[user_id] = {
+    socket_id: socket.id
+  }
+  console.log(users)
+  socket.on("disconnect", () => {
+    delete users[user_id]
+    console.log(`user ${socket.id} disconnect`)
+  })
+
+  socket.on("private message", async (data) => {
+    await databaseService.conversation.insertOne(
+      new Conversation({
+        sender_id: new ObjectId(data.from),
+        receiver_id: new ObjectId(data.to),
+        content: data.content
+      })
+    )
+    const receiver_socket_id = users[data.to]?.socket_id // lấy ra socket id của người nhận
+    socket.to(receiver_socket_id).emit("receive private message", {
+      content: data.content,
+      from: user_id
+    })
+  })
+
+  // socket.on("hello", (arg) => {
+  //   console.log(arg)
+  // })
+
+  // socket.emit("hi", { message: `Xin chào ${socket.id} đã kết nối thành công` })
+}) // instance socket (io > (lớn hơn) socket)
 
 // nó ưu tiên chạy các middleware trước
 // rồi mới chạy định tuyến route

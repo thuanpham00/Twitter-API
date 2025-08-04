@@ -1,7 +1,7 @@
 version: '3'
 services:
   twitter:
-    image: thuan/twitter:v0
+    image: thuanpham00/twitter:v0
     ports:
       - '3334:4000'
     volumes:

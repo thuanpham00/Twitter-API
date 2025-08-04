@@ -8,6 +8,7 @@ import Tweet from "~/models/schemas/Tweet.schema"
 import HashTag from "~/models/schemas/HashTags.schema"
 import { BookmarkType } from "~/models/schemas/Bookmark.schema"
 import { LikeType } from "~/models/schemas/Like.schema"
+import { ConversationType } from "~/models/schemas/Conversation.schema"
 // dotenv.config() // đọc file .env mặc định
 // dotenv.config({ path: '.env.production' })   // ✅ đọc file production
 dotenv.config({ path: ".env.development" }) // ✅ đọc file development
@@ -110,6 +111,10 @@ class DatabaseService {
 
   get like(): Collection<LikeType> {
     return this.db.collection(process.env.DB_LIKES_COLLECTION as string)
+  }
+
+  get conversation(): Collection<ConversationType> {
+    return this.db.collection(process.env.DB_CONVERSATION_COLLECTION as string)
   }
 }
 
