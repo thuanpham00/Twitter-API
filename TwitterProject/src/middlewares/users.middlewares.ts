@@ -517,6 +517,15 @@ export const updateMeValidator = validate(
   )
 )
 
+export const getConversationValidator = validate(
+  checkSchema(
+    {
+      receiverId: userIdSchema
+    },
+    ["params"]
+  )
+)
+
 export const followValidator = validate(
   checkSchema(
     {

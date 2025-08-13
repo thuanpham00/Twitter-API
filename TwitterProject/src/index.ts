@@ -15,10 +15,8 @@ import { searchRoute } from "./routes/search.routes"
 import { rateLimit } from "express-rate-limit"
 import "~/utils/s3"
 import { createServer } from "http"
-import { Server } from "socket.io"
-import Conversation from "./models/schemas/Conversation.schema"
-import { ObjectId } from "mongodb"
 import conversationRouter from "./routes/conversation.routes"
+import { initialSocket } from "./utils/socket"
 // import "~/utils/fake"
 config()
 
@@ -29,7 +27,6 @@ const limiter = rateLimit({
   standardHeaders: "draft-8", // draft-6: `RateLimit-*` headers; draft-7 & draft-8: combined `RateLimit` header
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
   ipv6Subnet: 56 // Set to 60 or 64 to be less aggressive, or 52 or 48 to be more aggressive
-  // store: ... , // Redis, Memcached, etc. See below.
 })
 
 const app = express()
@@ -65,56 +62,11 @@ app.use(defaultErrorHandler)
 //   console.log(`Example app listening on port ${port}`)
 // })
 
+initialSocket(httpServer)
+
 httpServer.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
 })
-
-const io = new Server(httpServer, {
-  cors: {
-    origin: "http://localhost:3000"
-  }
-}) // instance io
-
-// connection và disconnect là sự kiện mặc định ở server (Socket.IO)
-const users: {
-  [key: string]: {
-    socket_id: string
-  }
-} = {}
-
-io.on("connection", (socket) => {
-  console.log(`user ${socket.id} connected`)
-  const user_id = socket.handshake.auth.user_id // user_id người gửi
-  users[user_id] = {
-    socket_id: socket.id
-  }
-  console.log(users)
-  socket.on("disconnect", () => {
-    delete users[user_id]
-    console.log(`user ${socket.id} disconnect`)
-  })
-
-  socket.on("private message", async (data) => {
-    await databaseService.conversation.insertOne(
-      new Conversation({
-        sender_id: new ObjectId(data.from),
-        receiver_id: new ObjectId(data.to),
-        content: data.content
-      })
-    )
-    const receiver_socket_id = users[data.to]?.socket_id // lấy ra socket id của người nhận
-    socket.to(receiver_socket_id).emit("receive private message", {
-      content: data.content,
-      from: user_id
-    })
-  })
-
-  // socket.on("hello", (arg) => {
-  //   console.log(arg)
-  // })
-
-  // socket.emit("hi", { message: `Xin chào ${socket.id} đã kết nối thành công` })
-}) // instance socket (io > (lớn hơn) socket)
 
 // nó ưu tiên chạy các middleware trước
 // rồi mới chạy định tuyến route
