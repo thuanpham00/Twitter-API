@@ -24,7 +24,7 @@ export const initialSocket = (httpServer: ServerHttp) => {
     }
   } = {}
 
-  // middleware cấp server Socket.IO, chạy mỗi khi client bắt đầu handshake/kết nối tới server (ngay trước khi sự kiện connection xảy ra).
+  // middleware cấp server Socket.IO, chạy mỗi khi client bắt đầu handshake/kết nối tới server (ngay trước khi sự kiện connection xảy ra). - chạy 1 lần (cho 1 lần kết nối)
   io.use(async (socket, next) => {
     const { Authorization } = socket.handshake.auth // user_id người gửi
     const access_token = Authorization?.split(" ")[1]
